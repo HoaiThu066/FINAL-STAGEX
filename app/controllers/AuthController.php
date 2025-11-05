@@ -1,25 +1,22 @@
 <?php
 namespace App\Controllers;
-
 use App\Models\User;
-
 class AuthController extends BaseController
 {
     public function login(): void
     {
-        // Nếu người dùng đã đăng nhập, thì quay về trang chính
         if (!empty($_SESSION['user'])) {
             $this->redirect('index.php');
             return;
         }
         $error = '';
-        // Handle login submission on POST requests
+        
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // Đăng nhập bằng email hoặc tên đăng nhập (identifier)
+            //Người dùng đã nhấn nút đăng nhập
             $identifier = trim($_POST['identifier'] ?? '');
             $password   = trim($_POST['password'] ?? '');
-            // Default role to customer if not provided
             $role = $_POST['role'] ?? 'customer';
+            //Kiểm tra thông tin đăng nhập
             $userModel = new User();
             $user = $userModel->findByEmailOrAccountName($identifier);
             if (!$user) {
@@ -27,25 +24,18 @@ class AuthController extends BaseController
             } elseif (!password_verify($password, $user['password'])) {
                 $error = 'Sai mật khẩu, hãy nhập lại';
             } else {
-                // Promote legacy staff accounts to admin role up front.  This ensures
-                // that staff users are always considered admins regardless of the
-                // selected radio button.
                 if ($user['user_type'] === 'staff') {
                     $user['user_type'] = 'admin';
                 }
-                // If the login form requested the admin role but the user is not an
-                // administrator, deny access.  This prevents customers from using
-                // the admin portal with their normal accounts.
                 if ($role === 'admin' && $user['user_type'] !== 'admin') {
                     $error = 'Bạn không có quyền vào cổng này.';
                 } elseif ($user['status'] !== 'hoạt động') {
-                    // When the user status is not "hoạt động" (active), treat the account as locked
                     $error = 'Tài khoản của bạn đã bị khóa.';
                 } elseif (!$user['is_verified'] && $user['user_type'] === 'customer') {
-                    // Customers must be verified via OTP before completing login
                     $otp = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
                     $expires = date('Y-m-d H:i:s', time() + 10 * 60);
                     $userModel->setOtp((int)$user['user_id'], $otp, $expires);
+                    //gửi mail nếu khách hàng chưa xác minh
                     $this->sendOtpEmail($user['email'], $otp);
                     $_SESSION['pending_user_id'] = $user['user_id'];
                     $_SESSION['pending_role']      = $role;
@@ -53,28 +43,24 @@ class AuthController extends BaseController
                     $this->redirect('index.php?pg=verify');
                     return;
                 } elseif (empty($error)) {
-                    // Successful login: set session and redirect based on user type
+                    //Nếu không có lỗi, lưu thông tin người dùng vào phiên đăng nhập
                     $_SESSION['user']    = $user;
                     $_SESSION['success'] = 'Đăng nhập thành công!';
                         if ($user['user_type'] === 'admin') {
-                        // Redirect admins (including legacy staff) to the admin portal index.
                         $this->redirect('../admin/index.php?pg=admin-index');
                     } else {
-                        // Customers return to the home page
                         $this->redirect('index.php');
                     }
                     return;
                 }
             }
-            // If an error occurred during POST, fall through to render the login page with error
         }
-        // Render the login page (for both GET and POST with errors)
+        //Nếu chưa nhấn đăng nhập, hiển thị lại view login cùng lỗi nếu có
         $this->render('login', ['error' => $error]);
     }
 
     public function register(): void
     {
-        // Clear any existing sessions so registration is possible
         if (!empty($_SESSION['user'])) {
             unset($_SESSION['user']);
             session_destroy();
@@ -191,13 +177,6 @@ class AuthController extends BaseController
         ]);
     }
 
-    /**
-     * Display the OTP verification form and handle submissions.  When a user
-     * registers or logs in with an unverified account, their ID is stored
-     * in `$_SESSION['pending_user_id']`.  This method prompts for the
-     * numeric code and verifies it via the User model.  On success, the
-     * user is logged in and redirected to the appropriate page.
-     */
     public function verify(): void
     {
         if (empty($_SESSION['pending_user_id'])) {
@@ -261,15 +240,6 @@ class AuthController extends BaseController
         ]);
     }
 
-    /**
-     * Internal helper to send an OTP email to the provided address.  Uses
-     * the PHPMailer stub in `vendor/PHPMailer`.  SMTP configuration is
-     * loaded from `config/mail.php`.  If SMTP host is not specified the
-     * mail() function is used as a fallback.
-     *
-     * @param string $recipient Recipient email address
-     * @param string $otpCode   Generated OTP code
-     */
     public function sendOtpEmail(string $recipient, string $otpCode): void
     {
         // Load PHPMailer classes from vendor
@@ -321,13 +291,6 @@ class AuthController extends BaseController
         session_destroy();
         $this->redirect('index.php');
     }
-
-    /**
-     * Handle the "Quên mật khẩu" (forgot password) workflow.  This method
-     * orchestrates three stages: requesting a reset (enter email or
-     * account name), verifying an OTP code, and setting a new password.
-     * The current stage is determined by session variables.
-     */
     
     public function forgot(): void
 {
