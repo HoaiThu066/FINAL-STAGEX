@@ -36,7 +36,7 @@
                 <option value="">Tất cả</option>
                 <?php foreach ($perfsList as $p): ?>
                     <?php $sel = ((string)($filterPerf ?? '') === (string)$p['performance_id']) ? 'selected' : ''; ?>
-                    <option value="<?= $p['performance_id'] ?>" data-show-id="<?= $p['show_id'] ?>" <?= $sel ?>><?= htmlspecialchars($p['show_title']) ?> - <?= htmlspecialchars(date('d/m/Y', strtotime($p['performance_date']))) ?></option>
+                    <option value="<?= $p['performance_id'] ?>" data-show-id="<?= $p['show_id'] ?>" <?= $sel ?>><?= htmlspecialchars($p['show_title']) ?> - <?= htmlspecialchars(date('m/d/Y', strtotime($p['performance_date']))) ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
