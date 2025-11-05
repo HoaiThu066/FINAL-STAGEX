@@ -26,11 +26,18 @@ class TransactionsController extends AdBaseController
             $bk['payment_status'] = $payment['status'] ?? 'Đang chờ';
         }
         unset($bk);
+
         // Truy xuất vở và suất diễn cho bộ lọc danh sách
         $showModel = new \App\Models\Show();
         $perfModel = new \App\Models\PerformanceModel();
         $showsList = $showModel->all();
         $perfsList = $perfModel->all();
+        foreach ($bookings as &$b) {
+        $perf = $perfModel->find($b['performance_id']);
+        $b['show_id'] = $perf['show_id'] ?? null;
+        }
+         unset($b);
+
         // Sắp xếp các đặt chỗ theo ID để hiển thị nhất quán
         usort($bookings, function ($a, $b) {
             return ($a['booking_id'] ?? 0) <=> ($b['booking_id'] ?? 0);
