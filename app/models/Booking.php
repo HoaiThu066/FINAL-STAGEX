@@ -2,17 +2,21 @@
 namespace App\Models;
 
 
-/*Mô hình đặt chỗ bao gồm việc đặt chỗ và tạo vé. Một booking
-thuộc về một người dùng và một suất diễn cụ thể, có một hoặc nhiều
-vé liên quan. Trạng thái thanh toán và đặt chỗ được theo dõi.
+/**
+* Mô hình đặt chỗ bao gồm việc đặt chỗ và tạo vé. Một booking
+* thuộc về một người dùng và một suất diễn cụ thể, có một hoặc nhiều
+* vé liên quan. Trạng thái thanh toán và đặt chỗ được theo dõi.
 */
 
 
 class Booking extends Database
 {
-/*Tạo một booking mới với vé. Trả về ID đặt chỗ mới hoặc false nếu không thành công. 
-Thao tác này được gói gọn trong một giao dịch để đảm bảo tính nhất quán.
-@return int|false
+/**
+* Tạo một booking mới với vé. Trả về ID đặt chỗ mới hoặc false nếu 
+* không thành công. Thao tác này được gói gọn trong một giao dịch
+* để đảm bảo tính nhất quán.
+*
+* @return int|false
 */
  public function create(int $userId, int $performanceId, array $seatIds, float $total)
 {
@@ -107,10 +111,11 @@ Thao tác này được gói gọn trong một giao dịch để đảm bảo t�
 }
 
 
-    /*Lấy thông tin booking cùng ticket liên quan
-    @param int $id
-    @return array|null
-    */
+    /**
+     * Lấy thông tin booking cùng ticket liên quan
+     * @param int $id
+     * @return array|null
+     */
     public function find(int $id)
     {
         $pdo = $this->getConnection();
@@ -173,8 +178,7 @@ Thao tác này được gói gọn trong một giao dịch để đảm bảo t�
 
     /**
      * Cập nhật trạng thái booking và tùy chọn trạng thái thanh toán.
-     * Khi paymentStatus được cung cấp, khoản thanh toán gần nhất cho booking sẽ được cập nhật thông qua Payment model. The booking_status
-lưu trữ thông qua thủ tục lưu trữ `proc_update_booking_status`.
+     * Khi paymentStatus được cung cấp, khoản thanh toán gần nhất cho booking sẽ được cập nhật thông qua Payment model.
      * @return bool                      True on success
      */
     public function updateStatus(int $bookingId, string $bookingStatus, ?string $paymentStatus = null): bool
@@ -202,6 +206,7 @@ $stmt = $pdo->prepare('CALL proc_update_booking_status(:id, :b)');
         return (bool)$result;
     }
 
+
     public function forUser(int $userId): array
     {
         $pdo = $this->getConnection();
@@ -212,7 +217,7 @@ $stmt = $pdo->prepare('CALL proc_update_booking_status(:id, :b)');
         return $rows;
     }
 
-
+        public function all(): array
     {
         // Sử dụng proc lấy danh sách booking của admin
         $pdo = $this->getConnection();
@@ -221,7 +226,6 @@ $stmt = $pdo->prepare('CALL proc_update_booking_status(:id, :b)');
         $stmt->closeCursor();
         return $rows;
     }
-
 
     public function forUserDetailed(int $userId): array
     {
