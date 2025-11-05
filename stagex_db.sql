@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 05, 2025 at 09:17 PM
+-- Generation Time: Nov 05, 2025 at 09:27 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -2798,10 +2798,10 @@ CREATE TABLE `user_detail` (
 --
 
 INSERT INTO `user_detail` (`user_id`, `full_name`, `date_of_birth`, `address`, `phone`) VALUES
-(1, 'Dương Thanh Ngọc', '2005-02-08', NULL, NULL),
-(2, 'Lê Thị Mỹ Trang', '2005-12-09', NULL, NULL),
-(3, 'Nguyễn Hoài Thu', '2005-12-08', NULL, NULL),
-(4, 'Nguyễn Thị Thùy Trang', '2005-12-03', NULL, NULL);
+(1, 'Dương Thanh Ngọc', '2005-08-12', NULL, NULL),
+(2, 'Lê Thị Mỹ Trang', '2005-09-15', NULL, NULL),
+(3, 'Nguyễn Hoài Thu', '2005-08-21', NULL, NULL),
+(4, 'Nguyễn Thị Thùy Trang', '2005-03-12', NULL, NULL);
 
 --
 -- Indexes for dumped tables
