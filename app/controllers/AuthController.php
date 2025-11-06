@@ -1,22 +1,25 @@
 <?php
 namespace App\Controllers;
+
 use App\Models\User;
+
 class AuthController extends BaseController
 {
     public function login(): void
     {
+        // Nếu người dùng đã đăng nhập, thì quay về trang chính
         if (!empty($_SESSION['user'])) {
             $this->redirect('index.php');
             return;
         }
         $error = '';
-        
+        // Handle login submission on POST requests
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            //Người dùng đã nhấn nút đăng nhập
+            // Đăng nhập bằng email hoặc tên đăng nhập (identifier)
             $identifier = trim($_POST['identifier'] ?? '');
             $password   = trim($_POST['password'] ?? '');
+            // Default role to customer if not provided
             $role = $_POST['role'] ?? 'customer';
-            //Kiểm tra thông tin đăng nhập
             $userModel = new User();
             $user = $userModel->findByEmailOrAccountName($identifier);
             if (!$user) {
@@ -30,12 +33,13 @@ class AuthController extends BaseController
                 if ($role === 'admin' && $user['user_type'] !== 'admin') {
                     $error = 'Bạn không có quyền vào cổng này.';
                 } elseif ($user['status'] !== 'hoạt động') {
+                    // When the user status is not "hoạt động" (active), treat the account as locked
                     $error = 'Tài khoản của bạn đã bị khóa.';
                 } elseif (!$user['is_verified'] && $user['user_type'] === 'customer') {
+                    // Customers must be verified via OTP before completing login
                     $otp = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
                     $expires = date('Y-m-d H:i:s', time() + 10 * 60);
                     $userModel->setOtp((int)$user['user_id'], $otp, $expires);
-                    //gửi mail nếu khách hàng chưa xác minh
                     $this->sendOtpEmail($user['email'], $otp);
                     $_SESSION['pending_user_id'] = $user['user_id'];
                     $_SESSION['pending_role']      = $role;
@@ -43,54 +47,68 @@ class AuthController extends BaseController
                     $this->redirect('index.php?pg=verify');
                     return;
                 } elseif (empty($error)) {
-                    //Nếu không có lỗi, lưu thông tin người dùng vào phiên đăng nhập
+                    // Successful login: set session and redirect based on user type
                     $_SESSION['user']    = $user;
                     $_SESSION['success'] = 'Đăng nhập thành công!';
                         if ($user['user_type'] === 'admin') {
+                        // Redirect admins (including legacy staff) to the admin portal index.
                         $this->redirect('../admin/index.php?pg=admin-index');
                     } else {
+                        // Customers return to the home page
                         $this->redirect('index.php');
                     }
                     return;
                 }
             }
+            // If an error occurred during POST, fall through to render the login page with error
         }
-        //Nếu chưa nhấn đăng nhập, hiển thị lại view login cùng lỗi nếu có
+        // Render the login page (for both GET and POST with errors)
         $this->render('login', ['error' => $error]);
     }
 
     public function register(): void
     {
+        // Clear any existing sessions so registration is possible
         if (!empty($_SESSION['user'])) {
             unset($_SESSION['user']);
             session_destroy();
         }
         $error = '';
+        // Initialise form values so that they can be repopulated in case of error.
         $email       = trim($_POST['email'] ?? '');
         $password    = trim($_POST['password'] ?? '');
         $accountName = trim($_POST['account_name'] ?? '');
+        // New user detail fields collected during registration
         $fullName    = trim($_POST['full_name'] ?? '');
         $dob         = trim($_POST['date_of_birth'] ?? '');
         $address     = trim($_POST['address'] ?? '');
         $phone       = trim($_POST['phone'] ?? '');
         $userModel   = new User();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            //Kiểm tra trùng lặp email/tên tài khoản
+            // Check for duplicate email
             $existingByEmail = $userModel->findByEmail($email);
+            // Check for duplicate account name
             $existingByName  = $userModel->findByAccountName($accountName);
+            // Allow reuse of email or account_name if existing account is unverified
             $emailTaken = $existingByEmail && ($existingByEmail['is_verified'] ?? 0) == 1;
             $nameTaken  = $existingByName && ($existingByName['is_verified'] ?? 0) == 1;
             if ($nameTaken) {
                 $error = 'Tên tài khoản đã được sử dụng vui lòng nhập tên khác';
             } elseif ($emailTaken) {
-                $error = 'Tài khoản đã đăng ký.';
+                $error = 'Đã đăng ký tài khoản, Quên mật khẩu?';
             } elseif (!$email || !$password || !$accountName || !$fullName || !$dob) {
+                // Require basic account fields and the additional profile information
                 $error = 'Vui lòng nhập đầy đủ thông tin.';
             } elseif (strlen($password) < 8) {
+                // Enforce a minimum password length for security.  Users must
+                // choose passwords that are at least 8 characters long when
+                // registering a new account.  This prevents extremely weak
+                // passwords from being accepted.
                 $error = 'Mật khẩu phải có ít nhất 8 ký tự.';
             } else {
-                //Nếu email đã tồn tại nhưng chưa xác minh thì lấy thông tin của account cũ chứ không tạo mới
+                // If there is an existing unverified user, update their record instead of creating new
                 if ($existingByEmail && ($existingByEmail['is_verified'] ?? 0) == 0) {
+                    // Update password and account name for unverified email user via stored procedure
                     $userId = (int)$existingByEmail['user_id'];
                     $hash   = password_hash($password, PASSWORD_DEFAULT);
                     $pdo    = $userModel->getPdo();
@@ -101,11 +119,14 @@ class AuthController extends BaseController
                             'pwd' => $hash,
                             'acc' => $accountName
                         ]);
+                        // Drain the result set to free the connection for further queries
                         $stmt->closeCursor();
                     } catch (\Throwable $e) {
+                        // On failure silently ignore and allow registration to continue
                     }
                     $newUserId = $userId;
                 } elseif ($existingByName && ($existingByName['is_verified'] ?? 0) == 0) {
+                    // Update email and password for unverified account name user via stored procedure
                     $userId = (int)$existingByName['user_id'];
                     $hash   = password_hash($password, PASSWORD_DEFAULT);
                     $pdo    = $userModel->getPdo();
@@ -118,21 +139,28 @@ class AuthController extends BaseController
                         ]);
                         $stmt->closeCursor();
                     } catch (\Throwable $e) {
+                        // Suppress errors during the update; registration continues
                     }
                     $newUserId = $userId;
                 } else {
+                    // Create an unverified customer account
                     $userModel->create($email, $password, $accountName, 'customer', false);
                     $new = $userModel->findByEmail($email);
                     $newUserId = $new ? (int)$new['user_id'] : 0;
                 }
                 if ($newUserId) {
+                    // Save the user detail information collected during registration.  Even if the
+                    // account is unverified, we persist the profile details so they are not lost.
                     try {
                         $detailModel = new \App\Models\UserDetail();
+                        // Convert empty optional fields to null to avoid storing empty strings
                         $addr = $address !== '' ? $address : null;
                         $ph   = $phone   !== '' ? $phone   : null;
                         $detailModel->save($newUserId, $fullName, $dob, $addr, $ph);
                     } catch (\Throwable $detailEx) {
+                        // Ignore errors during saving user details; registration continues
                     }
+                    // Generate OTP for verification
                     $otp = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
                     $expires = date('Y-m-d H:i:s', time() + 10 * 60);
                     $userModel->setOtp($newUserId, $otp, $expires);
@@ -145,6 +173,7 @@ class AuthController extends BaseController
                 }
             }
         }
+        // Pass the form values back to the view so that inputs are preserved on error
         $this->render('register', [
             'error'        => $error,
             'account_name' => $accountName,
@@ -157,61 +186,74 @@ class AuthController extends BaseController
     }
 
     public function verify(): void
-    {
-        if (empty($_SESSION['pending_user_id'])) {
-            $this->redirect('index.php');
-            return;
-        }
-        $error = '';
-        $userModel = new User();
-        $userId = (int)$_SESSION['pending_user_id'];
-        $role = $_SESSION['pending_role'] ?? 'customer';
-        $remainingSeconds = 0;
-        if ($userId) {
-            $pendingUser = $userModel->findById($userId);
-            if ($pendingUser && !empty($pendingUser['otp_expires_at'])) {
-                $expiresAt = strtotime($pendingUser['otp_expires_at']);
-                $remainingSeconds = max(0, $expiresAt - time());
-            }
-        }
-
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $otpInput = trim($_POST['otp'] ?? '');
-            if (!$otpInput) {
-                $error = 'Vui lòng nhập mã xác thực.';
-            } else {
-                if ($userModel->verifyOtp($userId, $otpInput)) {
-                    $user = $userModel->findById($userId);
-                    if ($user) {
-                        unset($_SESSION['pending_user_id'], $_SESSION['pending_role']);
-                        $_SESSION['user'] = $user;
-                        $_SESSION['success'] = 'Xác minh thành công! Bạn đã đăng nhập.';
-                        $userType = $user['user_type'] ?? 'customer';
-                        if ($userType === 'staff') {
-                            $userType = 'admin';
-                            $user['user_type'] = 'admin';
-                            $_SESSION['user'] = $user;
-                        }
-                        if ($userType === 'admin') {
-                            $this->redirect('../admin/index.php?pg=admin-index');
-                        } else {
-                            $this->redirect('index.php');
-                        }
-                        return;
-                    }
-                } else {
-                    $error = 'Mã OTP sai hoặc đã hết hạn.';
-                }
-            }
-        }
-        $this->render('verify', [
-            'error' => $error,
-            'remaining' => $remainingSeconds
-        ]);
+{
+    if (empty($_SESSION['pending_user_id'])) {
+        $this->redirect('index.php');
+        return;
     }
 
+    $error = '';
+    $userModel = new User();
+    $userId = (int)$_SESSION['pending_user_id'];
+    $role = $_SESSION['pending_role'] ?? 'customer'; // customer | forgot
+
+    // Tính thời gian còn lại
+    $remainingSeconds = 0;
+    $user = $userModel->findById($userId);
+    if ($user && !empty($user['otp_expires_at'])) {
+        $expiresAt = strtotime($user['otp_expires_at']);
+        $remainingSeconds = max(0, $expiresAt - time());
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $otpInput = trim($_POST['otp'] ?? '');
+        if (!$otpInput) {
+            $error = 'Vui lòng nhập mã xác thực.';
+        } else {
+            if ($userModel->verifyOtp($userId, $otpInput)) {
+                unset($_SESSION['pending_user_id'], $_SESSION['pending_role']);
+
+                if ($role === 'forgot') {
+                    // Chuyển sang đặt mật khẩu mới
+                    $_SESSION['reset_verified'] = true;
+                    $_SESSION['reset_user_id'] = $userId;
+                    $this->redirect('index.php?pg=getpassword');
+                    return;
+                } else {
+                    // Đăng nhập bình thường
+                    $_SESSION['user'] = $user;
+                    $_SESSION['success'] = 'Xác minh thành công!';
+                    if ($user['user_type'] === 'staff') $user['user_type'] = 'admin';
+                    $this->redirect($user['user_type'] === 'admin' ? '../admin/index.php?pg=admin-index' : 'index.php');
+                    return;
+                }
+            } else {
+                $error = 'Mã OTP sai hoặc đã hết hạn.';
+            }
+        }
+    }
+
+    // Truyền thêm thông tin để view biết là quên mật khẩu hay đăng ký
+    $this->render('verify', [
+        'error' => $error,
+        'remaining' => $remainingSeconds,
+        'isForgot' => $role === 'forgot',
+        'email' => $user['email'] ?? ''
+    ]);
+}
+
+    /**
+     * Internal helper to send an OTP email to the provided address.  Uses
+     * the PHPMailer stub in `vendor/PHPMailer`.  SMTP configuration is
+     * loaded from `config/mail.php`.  If SMTP host is not specified the
+     * mail() function is used as a fallback.
+     *
+     * @param string $recipient Recipient email address
+     * @param string $otpCode   Generated OTP code
+     */
     public function sendOtpEmail(string $recipient, string $otpCode): void
     {
+        // Load PHPMailer classes from vendor
         require_once __DIR__ . '/../../vendor/PHPMailer/src/PHPMailer.php';
         require_once __DIR__ . '/../../vendor/PHPMailer/src/SMTP.php';
         require_once __DIR__ . '/../../vendor/PHPMailer/src/Exception.php';
@@ -219,6 +261,7 @@ class AuthController extends BaseController
         $config = require __DIR__ . '/../../config/mail.php';
         $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
         try {
+            // Determine whether to use SMTP
             if (!empty($config['host'])) {
                 $mail->isSMTP();
                 $mail->Host       = $config['host'];
@@ -228,12 +271,18 @@ class AuthController extends BaseController
                 $mail->SMTPSecure = $config['encryption'] ?? 'tls';
                 $mail->Port       = $config['port'] ?? 587;
             }
+            // Sender/recipient
             $fromEmail = $config['from_email'] ?? $config['username'] ?? 'no-reply@stagex.local';
             $fromName  = $config['from_name'] ?? 'StageX';
             $mail->setFrom($fromEmail, $fromName);
             $mail->addAddress($recipient);
+            // Compose the OTP email in Vietnamese.  Address the recipient
+            // directly, explain the purpose of the code and include the code
+            // itself.  This mirrors the example provided by the user.
             $mail->isHTML(false);
             $mail->Subject = 'Mã xác thực StageX';
+            // Build a friendly salutation.  Use the recipient email as
+            // part of the greeting since we do not store a full name.
             $body  = "Kính gửi Quý khách {$recipient}\n\n";
             $body .= "Chúng tôi đã nhận được yêu cầu xác thực trên hệ thống.\n\n";
             $body .= "Vui lòng nhập mã xác minh bên dưới để tiếp tục thực hiện thao tác trên hệ thống.\n\n";
@@ -242,6 +291,7 @@ class AuthController extends BaseController
             $mail->Body = $body;
             $mail->send();
         } catch (\Throwable $e) {
+            // Log error; do not interrupt user flow
             error_log('Không thể gửi email OTP: ' . $e->getMessage());
         }
     }
@@ -252,6 +302,13 @@ class AuthController extends BaseController
         session_destroy();
         $this->redirect('index.php');
     }
+
+    /**
+     * Handle the "Quên mật khẩu" (forgot password) workflow.  This method
+     * orchestrates three stages: requesting a reset (enter email or
+     * account name), verifying an OTP code, and setting a new password.
+     * The current stage is determined by session variables.
+     */
     
     public function forgot(): void
 {
@@ -259,15 +316,12 @@ class AuthController extends BaseController
     $error = '';
     $info  = '';
 
+    // === 1. XÓA SESSION CŨ KHI VÀO TRANG ===
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        unset(
-            $_SESSION['reset_user_id'],
-            $_SESSION['reset_verified'],
-            $_SESSION['reset_user_email']
-        );
+        unset($_SESSION['reset_user_id'], $_SESSION['reset_verified'], $_SESSION['reset_user_email']);
         $stage = 'request';
-        $remainingSeconds = 0;
     } else {
+        // Xác định đang ở bước nào
         $stage = 'request';
         if (!empty($_SESSION['reset_user_id']) && empty($_SESSION['reset_verified'])) {
             $stage = 'otp';
@@ -276,18 +330,7 @@ class AuthController extends BaseController
         }
     }
 
-    $remainingSeconds = 0;
-    if ($stage === 'otp') {
-        $uid = (int)($_SESSION['reset_user_id'] ?? 0);
-        if ($uid) {
-            $pending = $userModel->findById($uid);
-            if ($pending && !empty($pending['otp_expires_at'])) {
-                $expiresAt = strtotime($pending['otp_expires_at']);
-                $remainingSeconds = max(0, $expiresAt - time());
-            }
-        }
-    }
-
+    // === 2. XỬ LÝ FORM ===
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($stage === 'request') {
             $emailInput = trim($_POST['email'] ?? '');
@@ -300,60 +343,29 @@ class AuthController extends BaseController
                 if (!$user) {
                     $error = 'Không tìm thấy tài khoản.';
                 } else {
+                    // Gửi OTP
                     $otp = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
                     $expires = date('Y-m-d H:i:s', time() + 10 * 60);
                     $userModel->setOtp((int)$user['user_id'], $otp, $expires);
+                    $this->sendOtpEmail($user['email'], $otp);
 
-                    $_SESSION['reset_user_id']    = $user['user_id'];
-                    $_SESSION['reset_user_email'] = $user['email'];
-                    $info = 'Một mã xác thực đã được gửi tới email của bạn.';
-                    $stage = 'otp'; 
-                }
-            }
-        }
-        elseif ($stage === 'otp') {
-            $otpInput = trim($_POST['otp'] ?? '');
-            if (!$otpInput) {
-                $error = 'Vui lòng nhập mã xác thực.';
-            } else {
-                $uid = (int)$_SESSION['reset_user_id'];
-                if ($userModel->verifyOtp($uid, $otpInput)) {
-                    $_SESSION['reset_verified'] = true;
-                    $stage = 'reset';
-                    $info = 'Mã xác thực chính xác. Vui lòng nhập mật khẩu mới.';
-                } else {
-                    $error = 'Mã OTP sai hoặc đã hết hạn.';
-                }
-            }
-        }
-        elseif ($stage === 'reset') {
-            $pwd  = trim($_POST['password'] ?? '');
-            $pwd2 = trim($_POST['confirm_password'] ?? '');
-            if (!$pwd || !$pwd2) {
-                $error = 'Vui lòng nhập mật khẩu mới và xác nhận mật khẩu.';
-            } elseif (strlen($pwd) < 8) {
-                $error = 'Mật khẩu phải có ít nhất 8 ký tự.';
-            } elseif ($pwd !== $pwd2) {
-                $error = 'Mật khẩu xác nhận không khớp.';
-            } else {
-                $uid = (int)$_SESSION['reset_user_id'];
-                if ($userModel->updatePassword($uid, $pwd)) {
-                    unset($_SESSION['reset_user_id'], $_SESSION['reset_verified'], $_SESSION['reset_user_email']);
-                    $_SESSION['success'] = 'Đổi mật khẩu thành công. Bạn có thể đăng nhập với mật khẩu mới.';
-                    $this->redirect('index.php?pg=login');
+                    // Lưu session để dùng chung với verify
+                    $_SESSION['pending_user_id'] = $user['user_id'];
+                    $_SESSION['pending_role'] = 'forgot'; // Đánh dấu là quên mật khẩu
+                    $_SESSION['info'] = 'Một mã xác thực đã được gửi tới email của bạn.';
+
+                    $this->redirect('index.php?pg=verify');
                     return;
-                } else {
-                    $error = 'Không thể cập nhật mật khẩu.';
                 }
             }
         }
     }
 
+    // === 3. HIỂN THỊ FORM ===
     $this->render('getpassword', [
-        'stage'     => $stage,
-        'error'     => $error,
-        'info'      => $info,
-        'remaining' => $remainingSeconds
+        'stage' => $stage,
+        'error' => $error,
+        'info'  => $info
     ]);
 }
 }
