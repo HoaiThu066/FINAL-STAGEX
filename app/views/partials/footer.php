@@ -4,8 +4,7 @@
             <div class="row gy-3">
                 <div class="col-12 col-md-6">
                     <h5 class="h6 mb-3 text-warning">THÔNG TIN LIÊN HỆ</h5>
-                    <p class="mb-1">CÔNG TY CỔ PHẦN DỊCH VỤ TRUYỀN THÔNG QUẢNG CÁO</p>
-                    <p class="mb-1">SÀI GÒN PHẲNG – StageX</p>
+                    <p class="mb-1">CÔNG TY CỔ PHẦN DỊCH VỤ TRUYỀN THÔNG QUẢNG CÁO SÀI GÒN PHẲNG – StageX</p>
                     <p class="mb-1">ĐỊA CHỈ: 125 CỐNG QUỲNH, P. NGUYỄN CƯ TRINH, Q.1, TPHCM</p>
                     <p class="mb-1">EMAIL: contact@stagex.vn</p>
                     <p class="mb-1">SĐT: (028) 2228 3825&nbsp;&nbsp;|&nbsp;&nbsp;0869 047 971</p>
