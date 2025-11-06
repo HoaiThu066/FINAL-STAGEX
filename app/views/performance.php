@@ -30,15 +30,17 @@
 
 <form method="post">
     <?php
-    // Build the seat grid and price map.  Include all seats so that gaps
-    // (seats with null category) are preserved in the layout.  Compute
-    // the maximum number of physical seats per row to ensure rows are
-    // aligned.  For seats without a category we assign an id of null and
-    // no display number.
+    // Xây dựng bản đồ giá và thông tin ghế.  Bao gồm tất cả các ghế để giữ khoảng trống
+    // đồng thời tạo bản đồ seatInfo (nhãn ghế và tên hạng ghế)
     $priceMap = [];
-    // Organise seats by row and seat number
     $seatRowsMap = [];
     $maxSeatNum = 0;
+    // Bản đồ category_id => category_name
+    $catNames = [];
+    foreach ($categories as $cItem) {
+        $catNames[$cItem['category_id']] = $cItem['category_name'];
+    }
+    $seatInfo = [];
     foreach ($seats as $s) {
         $row = $s['row_char'];
         $num = (int)$s['seat_number'];
@@ -47,19 +49,23 @@
             $seatRowsMap[$row] = [];
         }
         $seatRowsMap[$row][$num] = $s;
-        // Populate price map only for seats that can be booked (have a category)
         if ($s['category_id'] !== null) {
             $priceMap[$s['seat_id']] = (float)$performance['price'] + (float)$s['base_price'];
+            $label = $s['row_char'] . $s['real_seat_number'];
+            $catName = $catNames[$s['category_id']] ?? '';
+            $seatInfo[$s['seat_id']] = [
+                'label'    => $label,
+                'category' => $catName
+            ];
         }
     }
-    // Sort row keys alphabetically and seat numbers ascending
+    // Sắp xếp hàng và số ghế tăng dần
     ksort($seatRowsMap);
     foreach ($seatRowsMap as &$seatList) {
         ksort($seatList);
     }
     unset($seatList);
-    // Build a grid for JavaScript: each row is an array of seat objects in
-    // physical seat order.  For gaps, id and num are null/empty.
+    // Xây dựng lưới ghế cho JS
     $seatGrid = [];
     foreach ($seatRowsMap as $rowChar => $seatsByNum) {
         $rowEntries = [];
@@ -75,7 +81,6 @@
                         'booked' => isset($booked[$seat['seat_id']])
                     ];
                 } else {
-                    // Gap: preserve spacing but no seat id or number
                     $rowEntries[] = [
                         'id'     => null,
                         'num'    => '',
@@ -85,7 +90,6 @@
                     ];
                 }
             } else {
-                // Should not occur as seats are pre‑generated for all positions
                 $rowEntries[] = [
                     'id'     => null,
                     'num'    => '',
@@ -98,12 +102,26 @@
         $seatGrid[$rowChar] = $rowEntries;
     }
     ?>
-    <div id="seat-container" data-price-map='<?= json_encode([]) ?>'></div>
+    <div class="row">
+        <div class="col-md-8 mb-3">
+            <div id="seat-container" data-price-map='<?= json_encode($priceMap) ?>' data-seat-info='<?= json_encode($seatInfo) ?>'></div>
+        </div>
+        <div class="col-md-4">
+            <h5 class="mb-3">Hóa đơn</h5>
+            <ul class="list-group mb-3" id="selected-list"></ul>
+            <p class="fs-5">Tổng cộng: <strong id="selected-total">0&nbsp;₫</strong></p>
+            <button type="submit" class="btn btn-warning w-100">Xác nhận và thanh toán tại cổng VNPay</button>
+        </div>
+    </div>
+    <!-- Hidden input để truyền danh sách ghế đã chọn về máy chủ -->
+    <input type="hidden" name="seats[]" id="selected-seats-input" value="[]">
     <script>
         document.addEventListener('DOMContentLoaded', function(){
             const container = document.getElementById('seat-container');
-            // Inject price map for selectable seats
-            container.setAttribute('data-price-map', '<?= json_encode($priceMap) ?>');
+            const priceMapJson = container.getAttribute('data-price-map');
+            const seatInfoJson = container.getAttribute('data-seat-info');
+            const priceMap = priceMapJson ? JSON.parse(priceMapJson) : {};
+            const seatInfo = seatInfoJson ? JSON.parse(seatInfoJson) : {};
             let html = '<div class="d-inline-block border p-3 bg-dark rounded-3">';
             const seatGrid = <?= json_encode($seatGrid) ?>;
             const maxSeat = <?= $maxSeatNum ?>;
@@ -111,7 +129,6 @@
                 html += `<div class="d-flex align-items-center mb-1"><div class="me-2">${row}</div>`;
                 seatGrid[row].forEach(s => {
                     if (s.id) {
-                        // Build classes for selectable seat
                         const classes = ['seat'];
                         if (s.class && !/^[0-9a-fA-F]{6}$/.test(s.class)) {
                             classes.push(s.class);
@@ -123,13 +140,11 @@
                         }
                         html += `<div class="${classes.join(' ')}" data-seat-id="${s.id}" style="${style}">${s.num}</div>`;
                     } else {
-                        // Gap: preserve spacing but non‑interactive blank cell
                         html += '<div class="seat" style="background-color:transparent; border:none; cursor:default;"></div>';
                     }
                 });
                 html += '</div>';
             }
-            // Render bottom seat numbers using physical seat numbers for alignment
             html += '<div class="d-flex align-items-center mt-2">';
             html += '<div class="me-2" style="min-width:1.5rem;"></div>';
             for (let n = 1; n <= maxSeat; n++) {
@@ -138,11 +153,44 @@
             html += '</div>';
             html += '</div>';
             container.innerHTML = html;
+            // Logic chọn ghế và cập nhật hóa đơn
+            const selectedInput = document.getElementById('selected-seats-input');
+            const totalSpan = document.getElementById('selected-total');
+            const selectedListEl = document.getElementById('selected-list');
+            const selected = new Set();
+            container.addEventListener('click', (e) => {
+                const target = e.target;
+                if (!target.classList.contains('seat') || target.classList.contains('booked')) return;
+                const seatId = target.getAttribute('data-seat-id');
+                if (!seatId) return;
+                if (selected.has(seatId)) {
+                    selected.delete(seatId);
+                    target.classList.remove('selected');
+                } else {
+                    selected.add(seatId);
+                    target.classList.add('selected');
+                }
+                updateSelected();
+            });
+            function updateSelected() {
+                const arr = Array.from(selected).map(seatId => `${seatId}|${priceMap[seatId]}`);
+                selectedInput.value = JSON.stringify(arr);
+                let total = 0;
+                selected.forEach(sid => { total += parseFloat(priceMap[sid]); });
+                totalSpan.textContent = total.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
+                selectedListEl.innerHTML = '';
+                selected.forEach(sid => {
+                    const info = seatInfo[sid];
+                    const price = parseFloat(priceMap[sid]);
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                    li.textContent = `${info.label} (${info.category})`;
+                    const span = document.createElement('span');
+                    span.textContent = price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
+                    li.appendChild(span);
+                    selectedListEl.appendChild(li);
+                });
+            }
         });
     </script>
-    <input type="hidden" name="seats[]" id="selected-seats-input" value="[]">
-    <div class="mt-3 d-flex justify-content-between align-items-center">
-        <span>Tổng cộng: <strong id="selected-total">0&nbsp;₫</strong></span>
-        <button type="submit" class="btn btn-warning">Tiếp tục</button>
-    </div>
 </form>

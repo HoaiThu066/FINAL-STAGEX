@@ -19,7 +19,6 @@ spl_autoload_register(function ($class) {
 use App\Controllers\HomeController;
 use App\Controllers\ShowController;
 use App\Controllers\PerformanceController;
-use App\Controllers\OrderController;
 use App\Controllers\AuthController;
 use App\Controllers\BookingsController;
 use App\Controllers\PaymentController;
@@ -45,12 +44,8 @@ switch ($pg) {
         $performanceId = isset($_GET['performance_id']) ? (int)$_GET['performance_id'] : 0;
         (new PerformanceController())->select($performanceId);
         break;
-    case 'order':
-        (new OrderController())->summary();
-        break;
-    case 'pay':
-        (new PaymentController())->pay();
-        break;
+    // Trình tự đặt vé mới loại bỏ trang tóm tắt (order) và trang thanh toán tách biệt (pay).
+    // Việc đặt vé và chuyển đến cổng thanh toán VNPay được thực hiện trực tiếp sau khi chọn ghế.
     case 'vnpay_payment':
         (new PaymentController())->vnpayPayment();
         break;

@@ -82,11 +82,11 @@ class CategoryShowController extends AdBaseController
                 if ($title && $duration > 0 && $director && $poster) {
                     $newId = $showModel->create($title, $desc, $duration, $director, $poster, $status);
                     if ($newId) {
-                        $pdo = \App\Models\Database::connect();
-                        $stmt = $pdo->prepare('INSERT INTO show_genres (show_id, genre_id) VALUES (:sid, :gid)');
-                        foreach ($genreIds as $gid) {
-                            $stmt->execute(['sid' => $newId, 'gid' => $gid]);
-                        }
+                        // Sử dụng thủ tục lưu trữ để gắn thể loại cho vở diễn mới
+                        // nhằm tránh truy vấn thủ công trực tiếp.  updateGenres() sẽ
+                        // xóa toàn bộ liên kết cũ (không có trong trường hợp tạo mới)
+                        // rồi thêm lại theo danh sách genreIds.
+                        $showModel->updateGenres($newId, $genreIds);
                         $_SESSION['success'] = 'Đã thêm vở diễn mới.';
                     } else {
                         $_SESSION['error'] = 'Không thể thêm vở diễn.';
@@ -124,26 +124,15 @@ class CategoryShowController extends AdBaseController
                 // fallback update in Show::all().  Ignore any posted status value.
                 $genreIds  = $_POST['genre_ids'] ?? [];
                 if ($showId > 0 && $title && $duration > 0 && $director && $poster) {
-                    $pdo = \App\Models\Database::connect();
-                    // Update the show record.  Exclude the status column so that it
-                    // remains unchanged; it will be recalculated automatically.
-                    $stmt = $pdo->prepare('UPDATE shows SET title = :title, description = :desc, duration_minutes = :dur, director = :dir, poster_image_url = :poster WHERE show_id = :sid');
-                    $stmt->execute([
-                        'title'  => $title,
-                        'desc'   => $desc,
-                        'dur'    => $duration,
-                        'dir'    => $director,
-                        'poster' => $poster,
-                        'sid'    => $showId
-                    ]);
-                    // Update genre pivot table: remove existing and insert new selections
-                    $stmtDel = $pdo->prepare('DELETE FROM show_genres WHERE show_id = :sid');
-                    $stmtDel->execute(['sid' => $showId]);
-                    $stmtIns = $pdo->prepare('INSERT INTO show_genres (show_id, genre_id) VALUES (:sid, :gid)');
-                    foreach ($genreIds as $gid) {
-                        $stmtIns->execute(['sid' => $showId, 'gid' => $gid]);
+                    // Cập nhật thông tin show bằng thủ tục lưu trữ để tránh truy vấn thủ công
+                    $success = $showModel->updateDetails($showId, $title, $desc, $duration, $director, $poster);
+                    // Cập nhật danh sách thể loại bằng thủ tục lưu trữ
+                    $successGenres = $showModel->updateGenres($showId, $genreIds);
+                    if ($success && $successGenres) {
+                        $_SESSION['success'] = 'Đã cập nhật vở diễn.';
+                    } else {
+                        $_SESSION['error'] = 'Không thể cập nhật vở diễn.';
                     }
-                    $_SESSION['success'] = 'Đã cập nhật vở diễn.';
                 } else {
                     $_SESSION['error'] = 'Vui lòng điền đầy đủ thông tin vở diễn.';
                 }

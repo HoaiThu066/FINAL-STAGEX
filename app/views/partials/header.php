@@ -1,4 +1,10 @@
 <?php
+// Extract flash messages and clear them so they don't persist.  Use
+// distinct variable names to avoid clobbering local variables passed
+// from controllers (e.g. $error used on login/register pages).  If
+// these variables were called `$success`/`$error` directly they
+// would override the controller-supplied values when the header is
+// included.  Prefix them with `flash` to avoid such conflicts.
 $flashSuccess = $_SESSION['success'] ?? '';
 $flashError   = $_SESSION['error'] ?? '';
 unset($_SESSION['success'], $_SESSION['error']);
@@ -8,15 +14,19 @@ unset($_SESSION['success'], $_SESSION['error']);
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>STAGEX</title>
+    <title>StageX Demo</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <link rel="stylesheet" href="<?= BASE_URL ?>assets/css/style.css">
 </head>
 <body class="bg-dark text-light d-flex flex-column min-vh-100">
+    <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-secondary-subtle">
         <div class="container">
+            <!-- Site logo and title -->
             <a class="navbar-brand d-flex align-items-center" href="<?= BASE_URL ?>index.php">
+                <!-- Display only the logo.  Remove the separate StageX text and enlarge the logo for better prominence. -->
+                <!-- Increase the logo size for improved visibility -->
                 <img src="<?= BASE_URL ?>assets/images/logo.svg" alt="StageX" style="height:70px; width:auto;">
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain" aria-controls="navMain" aria-expanded="false" aria-label="Toggle navigation">
@@ -24,14 +34,33 @@ unset($_SESSION['success'], $_SESSION['error']);
             </button>
             <div class="collapse navbar-collapse" id="navMain">
                 <?php
+                // Determine whether the current page should display a guest
+                // header regardless of user type.  Public landing pages such as
+                // the home page, the shows listing and individual show detail
+                // should not reveal administrative actions even when an admin
+                // session exists.  Treat these pages the same as the home
+                // page for header purposes.
                 $pageParam   = $_GET['pg'] ?? '';
                 $isGuestPage = ($pageParam === '' || $pageParam === 'shows' || $pageParam === 'show');
                 $currentUser = (isset($_SESSION['user']) && is_array($_SESSION['user'])) ? $_SESSION['user'] : null;
+                // Treat unverified users as guests for header purposes.  If a user
+                // account has not completed OTP verification (is_verified=0),
+                // they should not see personalised navigation until verified.
                 if ($currentUser && isset($currentUser['is_verified']) && (int)$currentUser['is_verified'] === 0) {
                     $currentUser = null;
                 }
+                // Preserve the search keyword from the query string so the search box retains its value after submitting.
                 $searchTerm = htmlspecialchars($_GET['keyword'] ?? '');
-
+                /*
+                 * Determine which user information to display in the navigation bar.
+                 * The behaviour is as follows:
+                 *  - On the home page (`pg` not set or empty) guests always see login/register buttons.
+                 *    Administrators should also see a guest-like header on the home page so that
+                 *    privileged links such as "Quản trị" are hidden until they intentionally
+                 *    navigate to the admin area.  Logged-in customers, however, should still see
+                 *    their account greeting and "Vé của tôi" link on the home page.
+                 *  - On other pages, the header reflects the current user session normally.
+                 */
                 if ($isGuestPage) {
                     if ($currentUser === null) {
                         // No session -> guest
@@ -138,3 +167,6 @@ unset($_SESSION['success'], $_SESSION['error']);
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         <?php endif; ?>
+
+        <?php
+        ?>

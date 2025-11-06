@@ -153,6 +153,71 @@ class Show extends Database
         } catch (\Throwable $ex) {
             return false;
         }
+        // Đóng hàm create() tại đây trước khi khai báo các phương thức mới
+    }
+
+    /**
+     * Cập nhật thông tin chi tiết của một vở diễn mà không thay đổi trạng thái.
+     * Hàm này gọi thủ tục lưu trữ proc_update_show_details để tránh truy vấn trực tiếp.
+     *
+     * @param int    $id         Mã vở diễn
+     * @param string $title      Tiêu đề mới
+     * @param string $description Mô tả mới
+     * @param int    $duration    Thời lượng mới (phút)
+     * @param string $director    Đạo diễn mới
+     * @param string $posterUrl   URL ảnh poster mới
+     * @return bool  true nếu thành công, false nếu thất bại
+     */
+    public function updateDetails(int $id, string $title, string $description, int $duration, string $director, string $posterUrl): bool
+    {
+        $pdo = $this->getConnection();
+        try {
+            $stmt = $pdo->prepare('CALL proc_update_show_details(:sid, :title, :desc, :dur, :dir, :poster)');
+            $stmt->execute([
+                'sid'   => $id,
+                'title' => $title,
+                'desc'  => $description,
+                'dur'   => $duration,
+                'dir'   => $director,
+                'poster'=> $posterUrl
+            ]);
+            $stmt->closeCursor();
+            return true;
+        } catch (\Throwable $ex) {
+            return false;
+        }
+    }
+
+    /**
+     * Cập nhật các thể loại của một vở diễn.  Hàm sẽ xóa tất cả các
+     * bản ghi show_genres hiện có cho vở diễn sau đó chèn lại từng mã
+     * thể loại được cung cấp.  Toàn bộ thao tác được thực hiện thông
+     * qua các thủ tục lưu trữ để tránh truy vấn thủ công.
+     *
+     * @param int   $showId     Mã vở diễn
+     * @param array $genreIds   Danh sách ID thể loại
+     * @return bool  true nếu thành công
+     */
+    public function updateGenres(int $showId, array $genreIds): bool
+    {
+        $pdo = $this->getConnection();
+        try {
+            // Xóa tất cả các liên kết thể loại của vở diễn
+            $stmtDel = $pdo->prepare('CALL proc_delete_show_genres(:sid)');
+            $stmtDel->execute(['sid' => $showId]);
+            $stmtDel->closeCursor();
+            // Thêm từng thể loại mới
+            if (!empty($genreIds)) {
+                $stmtIns = $pdo->prepare('CALL proc_add_show_genre(:sid, :gid)');
+                foreach ($genreIds as $gid) {
+                    $stmtIns->execute(['sid' => $showId, 'gid' => $gid]);
+                    $stmtIns->closeCursor();
+                }
+            }
+            return true;
+        } catch (\Throwable $ex) {
+            return false;
+        }
     }
 
 

@@ -13,56 +13,8 @@ use App\Models\Booking;
 
 class PaymentController extends BaseController
 {
-    public function pay(): void
-    {
-        if (empty($_SESSION['current_booking'])) {
-            $this->redirect('index.php');
-            return;
-        }
-        // Hủy bất kỳ khoản thanh toán nào đang chờ xử lý trước thời gian cho phép (15 phút).
-// Điều này đảm bảo các đặt chỗ và thanh toán được tự động hủy trước khi hiển thị trang thanh toán. 
-// Phương thức này sẽ cập nhật cả trạng thái thanh toán và đặt chỗ khi cần thiết và giải phóng chỗ ngồi.
-
-
-        $paymentExpiryModel = new \App\Models\Payment();
-        $paymentExpiryModel->expirePendingPayments();
-        $bookingModel = new Booking();
-        $bookingId = $_SESSION['current_booking'];
-        $booking = $bookingModel->find($bookingId);
-        if (!$booking) {
-            unset($_SESSION['current_booking']);
-            $this->redirect('index.php');
-            return;
-        }
-        // Xử lý hoàn tất thanh toán thủ công (dự phòng) nếu quản trị viên đánh dấu booking là đã thanh toán.
-// Hệ thống cập nhật trạng thái đặt phòng và chuyển hướng đến trang chi tiết
-
-
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['complete'])) {
-            // Đánh dấu booking là đã hoàn tất và thanh toán thành công. Trạng thái thanh toán được lưu
-
-
-            $bookingModel->updateStatus($bookingId, 'Đã hoàn thành', 'Thành công');
-            // Sau khi thanh toán xóa biến phiên booking hiện tại
-            unset($_SESSION['current_booking']);
-            // Chuyển hướng đến trang booking_detail và chỉ ra thanh toán thành công.
-            $this->redirect('index.php?pg=booking-detail&id=' . $bookingId . '&paid=1');
-            return;
-        }
-        // Xử lý hủy thông qua tham số GET
-        if (isset($_GET['cancel']) && $_GET['cancel'] == '1') {
-            // Hủy đặt chỗ và đánh dấu thanh toán là không thành công. Trạng thái thanh toán là Thất bại.
-            $bookingModel->updateStatus($bookingId, 'Đã hủy', 'Thất bại');
-            unset($_SESSION['current_booking']);
-            $_SESSION['error'] = 'Đơn hàng đã được hủy do hết thời gian giữ chỗ.';
-            $this->redirect('index.php');
-            return;
-        }
-        // Render payment view bao gồm nút VNPay
-        $this->render('pay', [
-            'booking' => $booking
-        ]);
-    }
+    // Hàm pay() đã được loại bỏ do quy trình thanh toán mới không còn hiển thị trang thanh toán riêng.  
+    // Người dùng sẽ được chuyển trực tiếp đến cổng VNPay sau khi chọn ghế và xác nhận.  
 
 
     /* Khởi tạo thanh toán VNPay cho booking hiện tại. Phương thức này tạo một URL VNPay đã ký và chuyển hướng người dùng đến cổng thanh toán. */

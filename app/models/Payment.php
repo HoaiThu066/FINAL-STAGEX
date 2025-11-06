@@ -62,8 +62,17 @@ class Payment extends Database
     }
 
 
-    /* Cập nhật trạng thái thanh toán bằng cách sử dụng tham chiếu giao dịch VNPay.
-    Cũng lưu lại các trường VNPay bổ sung để kiểm tra.*/
+    /*
+     * Cập nhật trạng thái thanh toán bằng cách sử dụng tham chiếu giao dịch VNPay.
+     * Thủ tục cơ sở dữ liệu tương ứng (proc_update_payment_status) chịu
+     * trách nhiệm lưu lại các trường VNPay bổ sung (mã ngân hàng, ngày
+     * thanh toán) và cập nhật thời gian.  Nếu trạng thái được đặt thành
+     * "Thất bại" (ví dụ người dùng hủy thanh toán hoặc cổng thanh toán
+     * trả về lỗi), thủ tục sẽ tự động hủy booking, hủy tất cả các vé và
+     * trả ghế của suất diễn về trạng thái trống.  Việc giải phóng ghế được
+     * thực hiện hoàn toàn trong stored procedure để tránh truy vấn thủ công
+     * trong mã PHP.
+     */
     public function updateStatusByTxnRef(string $txnRef, string $status, ?string $bankCode, ?string $payDate): bool
     {
         $pdo = $this->getConnection();

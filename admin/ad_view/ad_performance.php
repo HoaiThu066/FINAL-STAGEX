@@ -126,7 +126,7 @@
                         <th scope="col">Bắt đầu</th>
                         <th scope="col">Kết thúc</th>
                         <th scope="col">Giá vé</th>
-                        <th scope="col" class="text-center" style="width: 200px;">Hành động</th>
+                        <th scope="col" class="text-center" style="width: 140px;">Hành động</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -203,4 +203,3 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 </script>
-
