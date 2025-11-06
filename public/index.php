@@ -1,8 +1,7 @@
 <?php
-// Front controller for StageX demo site.
+
 require_once __DIR__ . '/../config/config.php';
 
-// Simple autoload function for controllers and models
 spl_autoload_register(function ($class) {
     $prefix = 'App\\';
     $baseDir = __DIR__ . '/../app/';
@@ -24,7 +23,7 @@ use App\Controllers\BookingsController;
 use App\Controllers\PaymentController;
 use App\Controllers\ProfileController;
 
-// Determine page from query parameter
+
 $pg = $_GET['pg'] ?? '';
 switch ($pg) {
     case 'show':
