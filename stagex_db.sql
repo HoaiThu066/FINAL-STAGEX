@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 04, 2025 at 03:00 PM
+-- Generation Time: Nov 06, 2025 at 05:49 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -25,6 +25,11 @@ DELIMITER $$
 --
 -- Procedures
 --
+CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_add_show_genre` (IN `in_show_id` INT, IN `in_genre_id` INT)   BEGIN
+    INSERT INTO show_genres (show_id, genre_id)
+    VALUES (in_show_id, in_genre_id);
+END$$
+
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_approve_theater` (IN `in_theater_id` INT)   BEGIN
     UPDATE theaters
     SET status = 'Đã hoạt động'
@@ -212,6 +217,10 @@ END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_delete_show` (IN `in_show_id` INT)   BEGIN
     DELETE FROM shows WHERE show_id = in_show_id;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_delete_show_genres` (IN `in_show_id` INT)   BEGIN
+    DELETE FROM show_genres WHERE show_id = in_show_id;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_delete_staff` (IN `in_user_id` INT)   BEGIN
@@ -431,7 +440,6 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_seat_category_by_price` (I
     SELECT * FROM seat_categories WHERE base_price = in_base_price LIMIT 1;
 END$$
 
-
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_get_show_by_id` (IN `in_show_id` INT)   BEGIN
     SELECT s.*, GROUP_CONCAT(g.genre_name SEPARATOR ', ') AS genres
     FROM shows s
@@ -594,42 +602,6 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_update_payment_status` (IN `in
     END IF;
 END$$
 
---
--- Thủ tục cập nhật thông tin vở diễn (show)
--- Cập nhật các trường chi tiết cho một vở diễn cụ thể ngoại trừ trạng thái.
---
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_update_show_details` (
-    IN `in_show_id` INT,
-    IN `in_title` VARCHAR(255),
-    IN `in_description` TEXT,
-    IN `in_duration` INT,
-    IN `in_director` VARCHAR(255),
-    IN `in_poster` VARCHAR(255)
-)   BEGIN
-    UPDATE shows
-    SET title            = in_title,
-        description      = in_description,
-        duration_minutes = in_duration,
-        director         = in_director,
-        poster_image_url = in_poster
-    WHERE show_id = in_show_id;
-END$$
-
---
--- Thủ tục xóa tất cả các thể loại của một vở diễn
---
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_delete_show_genres` (IN `in_show_id` INT)   BEGIN
-    DELETE FROM show_genres WHERE show_id = in_show_id;
-END$$
-
---
--- Thủ tục thêm thể loại cho vở diễn
---
-CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_add_show_genre` (IN `in_show_id` INT, IN `in_genre_id` INT)   BEGIN
-    INSERT INTO show_genres (show_id, genre_id)
-    VALUES (in_show_id, in_genre_id);
-END$$
-
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_update_performance_statuses` ()   BEGIN
     UPDATE performances
     SET status = 'Đã kết thúc'
@@ -687,6 +659,16 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_update_seat_category_range` (I
     WHERE theater_id = in_theater_id
       AND row_char = in_row_char
       AND category_id IS NULL;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_update_show_details` (IN `in_show_id` INT, IN `in_title` VARCHAR(255), IN `in_description` TEXT, IN `in_duration` INT, IN `in_director` VARCHAR(255), IN `in_poster` VARCHAR(255))   BEGIN
+    UPDATE shows
+    SET title            = in_title,
+        description      = in_description,
+        duration_minutes = in_duration,
+        director         = in_director,
+        poster_image_url = in_poster
+    WHERE show_id = in_show_id;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `proc_update_show_statuses` ()   BEGIN
@@ -2974,7 +2956,8 @@ ALTER TABLE `seat_categories`
 --
 ALTER TABLE `seat_performance`
   ADD PRIMARY KEY (`seat_id`,`performance_id`),
-  ADD KEY `sp_performance_idx` (`performance_id`);
+  ADD KEY `sp_performance_idx` (`performance_id`),
+  ADD KEY `idx_seat_id` (`seat_id`);
 
 --
 -- Indexes for table `shows`
@@ -3016,7 +2999,8 @@ ALTER TABLE `users`
 -- Indexes for table `user_detail`
 --
 ALTER TABLE `user_detail`
-  ADD PRIMARY KEY (`user_id`);
+  ADD PRIMARY KEY (`user_id`),
+  ADD KEY `user_id_idx` (`user_id`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -3093,17 +3077,62 @@ ALTER TABLE `users`
 --
 
 --
+-- Constraints for table `bookings`
+--
+ALTER TABLE `bookings`
+  ADD CONSTRAINT `performance_idx` FOREIGN KEY (`performance_id`) REFERENCES `performances` (`performance_id`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `user_idx` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
 -- Constraints for table `payments`
 --
 ALTER TABLE `payments`
+  ADD CONSTRAINT `payment_booking_idx` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`booking_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `payments_ibfk_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`booking_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `performances`
+--
+ALTER TABLE `performances`
+  ADD CONSTRAINT `show_idx` FOREIGN KEY (`show_id`) REFERENCES `shows` (`show_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `theater_idx` FOREIGN KEY (`theater_id`) REFERENCES `theaters` (`theater_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `reviews`
+--
+ALTER TABLE `reviews`
+  ADD CONSTRAINT `review_show_idx` FOREIGN KEY (`show_id`) REFERENCES `shows` (`show_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `review_user_idx` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `seats`
+--
+ALTER TABLE `seats`
+  ADD CONSTRAINT `category_idx2` FOREIGN KEY (`category_id`) REFERENCES `seat_categories` (`category_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `theater_idx2` FOREIGN KEY (`theater_id`) REFERENCES `theaters` (`theater_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `seat_performance`
 --
 ALTER TABLE `seat_performance`
   ADD CONSTRAINT `fk_sp_performance` FOREIGN KEY (`performance_id`) REFERENCES `performances` (`performance_id`),
-  ADD CONSTRAINT `fk_sp_seat` FOREIGN KEY (`seat_id`) REFERENCES `seats` (`seat_id`);
+  ADD CONSTRAINT `fk_sp_seat` FOREIGN KEY (`seat_id`) REFERENCES `seats` (`seat_id`),
+  ADD CONSTRAINT `idx_seat_id` FOREIGN KEY (`seat_id`) REFERENCES `seats` (`seat_id`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `sp_performance_idx` FOREIGN KEY (`performance_id`) REFERENCES `performances` (`performance_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `show_genres`
+--
+ALTER TABLE `show_genres`
+  ADD CONSTRAINT `show_genres_genre_idx` FOREIGN KEY (`genre_id`) REFERENCES `genres` (`genre_id`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `show_genres_show_idx` FOREIGN KEY (`show_id`) REFERENCES `shows` (`show_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `tickets`
+--
+ALTER TABLE `tickets`
+  ADD CONSTRAINT `ticket_booking_idx` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`booking_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `ticket_seat_idx` FOREIGN KEY (`seat_id`) REFERENCES `seats` (`seat_id`) ON UPDATE CASCADE;
 
 --
 -- Constraints for table `user_detail`
