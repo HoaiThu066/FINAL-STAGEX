@@ -31,11 +31,6 @@ switch ($pg) {
         (new ShowController())->detail($id);
         break;
 
-    // Present a list of shows with filtering options.  When the
-    // `pg` parameter is set to `shows` the ShowController will
-    // render a page containing a filter sidebar and a grid of
-    // show cards.  Additional query parameters (keyword, genre,
-    // date range, price range) are processed by the controller.
     case 'shows':
         (new ShowController())->index();
         break;

@@ -2,19 +2,28 @@
 namespace App\Controllers;
 
 
+
+
 use App\Models\Booking;
 
 
+
+
 /**
-* PaymentController hiển thị màn hình thanh toán cho booking hiện tại và xử lý việc hoàn tất hoặc hủy thanh toán. 
+* PaymentController hiển thị màn hình thanh toán cho booking hiện tại và xử lý việc hoàn tất hoặc hủy thanh toán.
 * Một bộ đếm ngược đơn giản được triển khai phía máy khách để tự động hủy sau 5 phút.
 */
 
 
+
+
 class PaymentController extends BaseController
 {
-    // Hàm pay() đã được loại bỏ do quy trình thanh toán mới không còn hiển thị trang thanh toán riêng.  
+
+
     // Người dùng sẽ được chuyển trực tiếp đến cổng VNPay sau khi chọn ghế và xác nhận.  
+
+
 
 
     /* Khởi tạo thanh toán VNPay cho booking hiện tại. Phương thức này tạo một URL VNPay đã ký và chuyển hướng người dùng đến cổng thanh toán. */
@@ -88,6 +97,8 @@ class PaymentController extends BaseController
         ];
 
 
+
+
         if (!empty($vnp_BankCode)) {
             $inputData['vnp_BankCode'] = $vnp_BankCode;
         }
@@ -118,7 +129,10 @@ class PaymentController extends BaseController
     }
 
 
+
+
     /*Xử lý URL trả về từ VNPay sau khi người dùng hoàn tất hoặc hủy thanh toán.*/
+
 
     public function vnpayReturn(): void
     {
