@@ -55,7 +55,6 @@ class AuthController extends BaseController
                 }
             }
         }
-        //Nếu chưa nhấn đăng nhập, hiển thị lại view login cùng lỗi nếu có
         $this->render('login', ['error' => $error]);
     }
 
@@ -81,7 +80,7 @@ class AuthController extends BaseController
             $emailTaken = $existingByEmail && ($existingByEmail['is_verified'] ?? 0) == 1;
             $nameTaken  = $existingByName && ($existingByName['is_verified'] ?? 0) == 1;
             if ($nameTaken ||$emailTaken) {
-                $error = 'Tài khoản đã được sử dụng vui lòng nhập tên khác';
+                $error = 'Tài khoản đã được sử dụng vui lòng nhập tên hoặc email khác';
             } elseif (!$email || !$password || !$accountName || !$fullName || !$dob) {
                 $error = 'Vui lòng nhập đầy đủ thông tin.';
             } elseif (strlen($password) < 8) {
@@ -166,11 +165,13 @@ class AuthController extends BaseController
             $this->redirect('index.php');
             return;
         }
+
         $error = '';
         $userModel = new User();
         $userId = (int)$_SESSION['pending_user_id'];
         $role = $_SESSION['pending_role'] ?? 'customer';
         $remainingSeconds = 0;
+
         if ($userId) {
             $pendingUser = $userModel->findById($userId);
             if ($pendingUser && !empty($pendingUser['otp_expires_at'])) {
