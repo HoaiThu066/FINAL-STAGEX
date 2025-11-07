@@ -1,4 +1,19 @@
-s     }
+<?php
+namespace App\Models;
+
+class Theater extends Database
+{
+    public function all(): array
+    {
+        $pdo = $this->getConnection();
+        try {
+            $stmt = $pdo->query('CALL proc_get_all_theaters()');
+            $rows = $stmt->fetchAll();
+            $stmt->closeCursor();
+            return $rows ?: [];
+        } catch (\Throwable $ex) {
+            return [];
+        }
     }
 
     public function create(string $name, int $rows, int $cols): bool
@@ -31,6 +46,7 @@ s     }
         }
     }
 
+
     public function canDelete(int $theaterId): bool
     {
         $pdo = $this->getConnection();
@@ -45,7 +61,6 @@ s     }
             return false;
         }
     }
-
     public function update(int $id, string $name): bool
     {
         try {
@@ -61,12 +76,12 @@ s     }
         }
     }
 
+
     public function modify(int $id, string $name, int $addRows, int $addCols): bool
     {
         $pdo = $this->getConnection();
         try {
             $pdo->beginTransaction();
-            
             if ($name !== '') {
                 $stmtName = $pdo->prepare('CALL proc_update_theater(:tid, :tname)');
                 $stmtName->execute([
@@ -75,7 +90,7 @@ s     }
                 ]);
                 $stmtName->closeCursor();
             }
-                 if ($addRows !== 0 || $addCols !== 0) {
+            if ($addRows !== 0 || $addCols !== 0) {
                 $stmtMod = $pdo->prepare('CALL proc_modify_theater_size(:tid, :arow, :acol)');
                 $stmtMod->execute([
                     'tid'  => $id,
@@ -94,6 +109,7 @@ s     }
         }
     }
 
+
     public function approve(int $id): bool
     {
         try {
@@ -105,4 +121,5 @@ s     }
             return false;
         }
     }
-s
+}
+
