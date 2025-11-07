@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Controllers;
 
 
@@ -6,6 +7,7 @@ namespace App\Controllers;
 
 class PerformanceAdminController extends AdBaseController
 {
+    
     public function index(): void
     {
         if (!$this->ensureAdmin()) return;
@@ -24,6 +26,7 @@ class PerformanceAdminController extends AdBaseController
                 $price     = (float)($_POST['price'] ?? 0);
                 if ($showId > 0 && $theaterId > 0 && $date && $start && $price > 0) {
                     
+
                     $perfDate = strtotime($date);
                     $todayDate = strtotime(date('Y-m-d'));
                     if ($perfDate !== false && $perfDate > $todayDate) {
@@ -67,7 +70,7 @@ class PerformanceAdminController extends AdBaseController
                 return;
             }
         }
-        
+       
         $editPerformance = null;
         if (isset($_GET['edit_id'])) {
             $editId = (int)$_GET['edit_id'];
@@ -77,7 +80,8 @@ class PerformanceAdminController extends AdBaseController
         }
         $performances = $perfModel->all();
         $shows        = $showModel->all();
-        
+       
+        $theatersRaw = $theaterModel->all();
         $theaters    = [];
         foreach ($theatersRaw as $th) {
             if (($th['status'] ?? '') === 'Đã hoạt động') {
@@ -93,7 +97,7 @@ class PerformanceAdminController extends AdBaseController
         usort($theaters, function ($a, $b) {
             return ($a['theater_id'] ?? 0) <=> ($b['theater_id'] ?? 0);
         });
-        
+       
         $this->renderAdmin('ad_performance', [
             'performances'    => $performances,
             'shows'           => $shows,

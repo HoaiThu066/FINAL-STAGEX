@@ -4,7 +4,7 @@
 <h2 class="h4 mb-4">Quản lý suất diễn</h2>
 
 
-<!-- Form to add a new performance -->
+
 <section class="mb-5">
     <h3 class="h5">Thêm suất diễn</h3>
     <form method="post" class="row g-3">
@@ -37,12 +37,12 @@
         </div>
         <div class="col-md-3">
             <label class="form-label">Giờ kết thúc</label>
-            <!-- End time is automatically computed based on the show's duration.  This field is read-only to prevent manual adjustment. -->
+            
             <input type="time" name="end_time" class="form-control" placeholder="Tự động" readonly>
         </div>
         <div class="col-md-3">
             <label class="form-label">Giá vé</label>
-            <!-- Use integer pricing (VND) without fractional part -->
+            
             <input type="number" step="1" name="price" class="form-control" min="0" required>
         </div>
         <div class="col-md-3 d-flex align-items-end">
@@ -52,7 +52,7 @@
 </section>
 
 
-<!-- Edit performance section (displayed between add and list) -->
+
 <?php if (isset($editPerformance) && is_array($editPerformance)): ?>
 <section class="mb-5">
     <h3 class="h5">Chỉnh sửa suất diễn</h3>
@@ -87,10 +87,7 @@
             <label class="form-label">Trạng thái</label>
             <select name="status" class="form-select" required>
                 <?php
-                // Use Vietnamese status strings directly as both the value and label.  These
-                // correspond to the enum values in the `performances` table.
-                // Only allow editing to "Đang mở bán" or "Đã hủy".  The status
-                // "Đã kết thúc" is set automatically when a performance ends.
+                
                 $statuses = [
                     'Đang mở bán' => 'Đang mở bán',
                     'Đã hủy'     => 'Đã hủy'
@@ -111,7 +108,7 @@
 <?php endif; ?>
 
 
-<!-- List of performances -->
+
 <section class="mb-5">
     <h3 class="h5">Danh sách suất diễn</h3>
     <?php if (!empty($performances)): ?>
@@ -141,13 +138,13 @@
                             <td><?= htmlspecialchars(number_format((float)$p['price'], 0, ',', '.')) ?>đ</td>
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-2">
-                                    <!-- Edit performance button.  Clicking triggers loading of the edit form by adding edit_id to query string -->
+                                   
                                     <a href="index.php?pg=admin-performance&edit_id=<?= $p['performance_id'] ?>" class="btn btn-sm btn-primary">Chỉnh sửa</a>
                                     <form method="post" onsubmit="return confirm('Bạn có chắc muốn xóa suất diễn này?');" class="d-inline">
                                         <input type="hidden" name="type" value="performance_delete">
                                         <input type="hidden" name="performance_id" value="<?= $p['performance_id'] ?>">
                                         <?php
-                                        // Only allow deletion when performance status is "Đã kết thúc".
+                                        
                                         $canDel = isset($p['status']) && $p['status'] === 'Đã kết thúc';
                                         ?>
                                         <button type="submit" class="btn btn-sm btn-danger" <?= $canDel ? '' : 'disabled' ?>>Xóa</button>
@@ -168,12 +165,12 @@
 
 
 <script>
-// Auto-calculate end time based on selected show duration and start time.
+
 document.addEventListener('DOMContentLoaded', function () {
     var showSelect = document.querySelector('select[name="show_id"]');
     var startInput = document.querySelector('input[name="start_time"]');
     var endInput   = document.querySelector('input[name="end_time"]');
-    // Map show IDs to their duration in minutes
+   
     var showDurations = {};
     <?php foreach ($shows as $s): ?>
     showDurations['<?= $s['show_id'] ?>'] = <?= (int)$s['duration_minutes'] ?>;
