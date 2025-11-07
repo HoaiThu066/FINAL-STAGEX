@@ -2,8 +2,6 @@
 <?php /** @var array $shows */ ?>
 <h2 class="h4 mb-4">Quản lý thể loại &amp; vở diễn</h2>
 
-
-<!-- Edit show section: displayed when an existing show is being edited -->
 <?php if (isset($editShow) && is_array($editShow)): ?>
 <section class="mb-5">
     <h3 class="h5">Chỉnh sửa vở diễn</h3>
@@ -31,7 +29,7 @@
                 <label class="form-label">Mô tả</label>
                 <textarea name="description" class="form-control" rows="3"><?= htmlspecialchars($editShow['description'] ?? '') ?></textarea>
             </div>
-            <!-- Status field removed: show status is determined automatically from performances -->
+            <!-- Trường Trạng thái bị loại bỏ: trạng thái vở diễn được xác định tự động từ các buổi diễn -->
             <div class="col-md-8">
                 <label class="form-label">Thể loại</label>
                 <div class="border rounded p-2" style="max-height: 180px; overflow-y: auto;">
@@ -57,7 +55,7 @@
 <?php endif; ?>
 
 
-<!-- Form to add a new genre -->
+<!-- Form để thêm thể loại mới -->
 <section class="mb-5">
     <h3 class="h5">Thêm thể loại mới</h3>
     <form method="post" class="row g-3">
@@ -72,7 +70,7 @@
 </section>
 
 
-<!-- Edit genre section -->
+<!-- Chỉnh sửa thể loại -->
 <?php if (isset($editGenre) && is_array($editGenre)): ?>
 <section class="mb-5">
     <h3 class="h5">Chỉnh sửa thể loại</h3>
@@ -91,7 +89,7 @@
 <?php endif; ?>
 
 
-<!-- List of genres -->
+<!-- DS thể loại -->
 <section class="mb-5">
     <h3 class="h5">Danh sách thể loại</h3>
     <?php if (!empty($genres)): ?>
@@ -111,7 +109,7 @@
                             <td><?= htmlspecialchars($genre['genre_name']) ?></td>
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-2">
-                                    <!-- Edit genre button triggers edit form via query parameter -->
+                                    <!-- Nút chỉnh sửa thể loại kích hoạt form chỉnh sửa thông qua tham số truy vấn (query parameter) -->
                                     <a href="index.php?pg=admin-category-show&edit_genre_id=<?= $genre['genre_id'] ?>" class="btn btn-sm btn-primary">Chỉnh sửa</a>
                                     <form method="post" onsubmit="return confirm('Bạn có chắc muốn xóa thể loại này?');" class="d-inline">
                                         <input type="hidden" name="type" value="genre_delete">
@@ -131,7 +129,7 @@
 </section>
 
 
-<!-- Form to add a new show -->
+<!-- Form để thêm show mới -->
 <section class="mb-5">
     <h3 class="h5">Thêm vở diễn mới</h3>
     <form method="post">
@@ -157,10 +155,10 @@
                 <label class="form-label">Mô tả</label>
                 <textarea name="description" class="form-control" rows="3"></textarea>
             </div>
-            <!-- Status field removed: new shows always start as "Sắp chiếu" -->
+            <!-- Show mới luôn ở trạng thái "Sắp chiếu" -->
             <div class="col-md-8">
                 <label class="form-label">Thể loại</label>
-                <!-- Custom genre selector: a scrollable list of checkboxes to allow multiple selections -->
+                <!-- Một danh sách hộp kiểm (checkboxes) có thể cuộn được để cho phép chọn nhiều mục. -->
                 <div class="border rounded p-2" style="max-height: 180px; overflow-y: auto;">
                     <?php foreach ($genres as $genre): ?>
                         <div class="form-check">
@@ -182,8 +180,6 @@
     </form>
 </section>
 
-
-<!-- List of shows -->
 <section class="mb-5">
     <h3 class="h5">Danh sách vở diễn</h3>
     <?php if (!empty($shows)): ?>
@@ -211,11 +207,11 @@
                             <td><?= htmlspecialchars($s['status']) ?></td>
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-2">
-                                    <!-- Edit show button: adds edit_id to the query string to display edit form -->
+                                    <!-- Nút chỉnh sửa vở diễn: thêm edit_id vào chuỗi truy vấn (query string) để hiển thị biểu mẫu chỉnh sửa. -->
                                     <a href="index.php?pg=admin-category-show&edit_id=<?= $s['show_id'] ?>" class="btn btn-sm btn-primary">Chỉnh sửa</a>
                                     <?php
-                                    // Disable delete button when the show has performances.  The
-                                    // controller sets `can_delete` to false when performances exist.
+                                    // Vô hiệu hóa (Disable) nút xóa khi vở diễn có các buổi diễn
+                                    // Bộ điều khiển (controller) đặt giá trị can_delete là sai (false) khi các buổi diễn tồn tại.
                                     $deleteDisabled = empty($s['can_delete']) || !$s['can_delete'];
                                     ?>
                                     <form method="post"<?= $deleteDisabled ? ' class="d-inline"' : ' class="d-inline"' ?> onsubmit="return <?= $deleteDisabled ? 'false' : 'confirm(\'Bạn có chắc muốn xóa vở diễn này?\')' ?>;">
