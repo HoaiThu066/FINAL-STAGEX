@@ -92,14 +92,6 @@ class PerformanceController extends BaseController
     }
 
 
-    /**
-     * Helper to fetch a single performance record by ID including theater
-     * name.  We replicate the query used in Show::performances but for
-     * an individual performance.
-     *
-     * @param int $id
-     * @return array|null
-     */
     private function findPerformanceById(int $id)
     {
         $db = \App\Models\Database::connect();
