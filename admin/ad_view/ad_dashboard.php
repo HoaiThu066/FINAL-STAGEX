@@ -1,5 +1,5 @@
 <h2 class="h4 mb-4">Bảng điều khiển</h2>
-<!-- Dashboard summary cards -->
+
 <div class="row g-4 mb-4">
     <div class="col-12 col-sm-6 col-lg-3">
         <div class="card bg-dark text-light shadow-sm h-100">
@@ -48,9 +48,7 @@
 </div>
 
 
-<!-- Additional metrics row -->
-<!-- Removed secondary statistics row (customers, reviews, growth and time) -->
-<!-- Revenue charts and tables -->
+
 <div class="row mb-4">
     <div class="col-12 col-lg-6 mb-4">
         <div class="card bg-dark text-light shadow-sm h-100">
@@ -65,7 +63,7 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <h5 class="card-title mb-0">Số lượng vé đã bán</h5>
-                    <!-- Filter buttons: allow switching between day/week/month/year views -->
+                    
                     <div class="btn-group btn-group-sm" role="group" aria-label="Ticket Sales Filter">
                         <button type="button" class="btn btn-outline-warning active" data-filter="day">Ngày</button>
                         <button type="button" class="btn btn-outline-warning" data-filter="week">Tuần</button>
@@ -110,16 +108,16 @@
 <p class="text-muted">Sử dụng menu bên trái để quản lý đơn hàng, loại & vở diễn, rạp & ghế, suất diễn, đánh giá và tài khoản.</p>
 
 
-<!-- Include Chart.js for rendering charts -->
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    // Data from PHP for monthly revenue
+   
     const monthlyRevenueData = <?php echo json_encode(array_values($monthlyRevenue)); ?>;
     const monthlyLabels = <?php echo json_encode(array_map(function($k){ return date('m/Y', strtotime($k.'-01')); }, array_keys($monthlyRevenue))); ?>;
 
 
-    // Data from PHP for ticket sales by day/week/month/year.  Keys are sorted in the controller.
+    
     const ticketSalesDayLabels   = <?php echo json_encode(array_keys($ticketSalesDay)); ?>;
     const ticketSalesDayValues   = <?php echo json_encode(array_values($ticketSalesDay)); ?>;
     const ticketSalesWeekLabels  = <?php echo json_encode(array_keys($ticketSalesWeek)); ?>;
@@ -130,7 +128,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const ticketSalesYearValues  = <?php echo json_encode(array_values($ticketSalesYear)); ?>;
 
 
-    // Monthly revenue chart (bar)
+    
     const ctx1 = document.getElementById('monthlyRevenueChart').getContext('2d');
     new Chart(ctx1, {
         type: 'bar',
@@ -154,16 +152,16 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
 
-    // Ticket sales bar chart with filter
+    
     const ticketCtx = document.getElementById('ticketSalesChart').getContext('2d');
-    // Organize datasets into an object keyed by the filter type
+    
     const ticketDatasets = {
         day:   { labels: ticketSalesDayLabels,   data: ticketSalesDayValues   },
         week:  { labels: ticketSalesWeekLabels,  data: ticketSalesWeekValues  },
         month: { labels: ticketSalesMonthLabels, data: ticketSalesMonthValues },
         year:  { labels: ticketSalesYearLabels,  data: ticketSalesYearValues  }
     };
-    // Initialise chart with day view by default
+    
     let currentFilter = 'day';
     let ticketChart = new Chart(ticketCtx, {
         type: 'bar',
@@ -185,19 +183,18 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
     });
-    // Listen for clicks on filter buttons to update the chart.  The active button
-    // is highlighted by toggling the 'active' class.
+    
     document.querySelectorAll('[data-filter]').forEach(function(btn) {
         btn.addEventListener('click', function() {
             const filter = this.getAttribute('data-filter');
             if (!ticketDatasets[filter] || filter === currentFilter) return;
             currentFilter = filter;
-            // Update active state on buttons
+            
             document.querySelectorAll('[data-filter]').forEach(function(b) {
                 b.classList.remove('active');
             });
             this.classList.add('active');
-            // Update chart labels and data
+            
             ticketChart.data.labels = ticketDatasets[filter].labels;
             ticketChart.data.datasets[0].data = ticketDatasets[filter].data;
             ticketChart.update();
