@@ -1,7 +1,6 @@
 <?php
 namespace App\Models;
 
-
 class SeatCategory extends Database
 {
     public function all(): array
@@ -32,13 +31,6 @@ class SeatCategory extends Database
         }
     }
 
-
-    /**
-     * @param string $name       
-     * @param float  $price      
-     * @param string $colorClass 
-     * @return bool
-     */
     public function create(string $name, float $price, string $colorClass): bool
     {
         try {
@@ -56,11 +48,6 @@ class SeatCategory extends Database
         }
     }
 
-
-    /**
-     * @param int $id
-     * @return bool
-     */
     public function delete(int $id): bool
     {
         try {
@@ -73,14 +60,6 @@ class SeatCategory extends Database
         }
     }
 
-
-    /**
-     * @param int    $id         
-     * @param string $name       
-     * @param float  $price      
-     * @param string $colorClass 
-     * @return bool              
-     */
     public function update(int $id, string $name, float $price, string $colorClass): bool
     {
         try {
@@ -97,13 +76,6 @@ class SeatCategory extends Database
             return false;
         }
     }
-
-
-    /**
-
-     * @param float $price 
-     * @return array|null
-     */
     public function findByPrice(float $price)
     {
         $pdo = $this->getConnection();
@@ -118,13 +90,6 @@ class SeatCategory extends Database
         }
     }
 
-
-    /**
- in use.
-     *
-     * @param int $categoryId 
-     * @return bool
-     */
     public function canDelete(int $categoryId): bool
     {
         $pdo = $this->getConnection();
