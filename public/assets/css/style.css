@@ -131,3 +131,9 @@ body {
 .seat.c0d6efd { background-color: #0d6efd; }
 .seat.c198754 { background-color: #198754; }
 .seat.c6f42c1 { background-color: #6f42c1; }
+
+/*placeholder*/
+.card.bg-secondary .form-control::placeholder {
+  color: white !important;
+  opacity: 1;
+}
