@@ -1,41 +1,8 @@
-<?php
-namespace App\Models;
-
-class Theater extends Database
-{
-    /**
-     *
-     * @return array
-     */
-    public function all(): array
-    {
-        $pdo = $this->getConnection();
-        try {
-            $stmt = $pdo->query('CALL proc_get_all_theaters()');
-            $rows = $stmt->fetchAll();
-            $stmt->closeCursor();
-            return $rows ?: [];
-        } catch (\Throwable $ex) {
-            return [];
-        }
+s     }
     }
 
-
-    /**
-     *
-     * @param string $name     
-     * @param int    $capacity 
-     * @return bool    
-     */
-    /**
-     * @param string $name 
-     * @param int    $rows 
-     * @param int    $cols 
-     * @return bool 
-     */
     public function create(string $name, int $rows, int $cols): bool
     {
-
         $pdo = $this->getConnection();
         try {
             $stmt = $pdo->prepare('CALL proc_create_theater(:name, :rows, :cols)');
@@ -52,14 +19,8 @@ class Theater extends Database
         }
     }
 
-
-    /*
-     * @param int $id
-     * @return bool
-     */
     public function delete(int $id): bool
     {
-
         try {
             $stmt = $this->getConnection()->prepare('CALL proc_delete_theater(:id)');
             $stmt->execute(['id' => $id]);
@@ -70,14 +31,8 @@ class Theater extends Database
         }
     }
 
-
-    /**
-     * @param int $theaterId
-     * @return bool 
-     */
     public function canDelete(int $theaterId): bool
     {
-
         $pdo = $this->getConnection();
         try {
             $stmt = $pdo->prepare('CALL proc_can_delete_theater(:tid)');
@@ -91,12 +46,6 @@ class Theater extends Database
         }
     }
 
-
-    /**
-     * @param int    $id   
-     * @param string $name
-     * @return bool 
-     */
     public function update(int $id, string $name): bool
     {
         try {
@@ -112,19 +61,12 @@ class Theater extends Database
         }
     }
 
-
-    /**
-     * @param int    $id       
-     * @param string $name      
-     * @param int    $addRows   
-     * @param int    $addCols   
-     * @return bool       
-     */
     public function modify(int $id, string $name, int $addRows, int $addCols): bool
     {
         $pdo = $this->getConnection();
         try {
             $pdo->beginTransaction();
+            
             if ($name !== '') {
                 $stmtName = $pdo->prepare('CALL proc_update_theater(:tid, :tname)');
                 $stmtName->execute([
@@ -133,8 +75,7 @@ class Theater extends Database
                 ]);
                 $stmtName->closeCursor();
             }
-   
-            if ($addRows !== 0 || $addCols !== 0) {
+                 if ($addRows !== 0 || $addCols !== 0) {
                 $stmtMod = $pdo->prepare('CALL proc_modify_theater_size(:tid, :arow, :acol)');
                 $stmtMod->execute([
                     'tid'  => $id,
@@ -153,11 +94,6 @@ class Theater extends Database
         }
     }
 
-
-    /**
-     * @param int $id Theatre ID
-     * @return bool
-     */
     public function approve(int $id): bool
     {
         try {
@@ -169,4 +105,4 @@ class Theater extends Database
             return false;
         }
     }
-}
+s
