@@ -4,7 +4,6 @@
     </div>
     <div class="col-md-8">
         <h2 class="mb-2">
-            <!-- Average rating above the show title -->
             <?php if (isset($avgRating) && $avgRating !== null): ?>
                 <div class="mb-1">
                     <?php
@@ -35,7 +34,6 @@
     </div>
 </div>
 
-
 <h3 class="h5 mb-3">Lịch suất diễn</h3>
 <?php if ($performances): ?>
     <div class="table-responsive">
@@ -58,10 +56,6 @@
                         <td><?= isset($p['lowest_price']) ? number_format($p['lowest_price'], 0, ',', '.') : number_format($p['price'], 0, ',', '.') ?></td>
                         <td>
                             <?php
-                            // Lock the booking button if the performance date has passed.  Comparing
-                            // against the current date (Y-m-d) ensures that shows in the past
-                            // cannot be selected.  When disabled, a secondary colour is used and
-                            // the button is rendered inactive.
                             $isPast = strtotime($p['performance_date']) < strtotime(date('Y-m-d'));
                             ?>
                             <?php if ($isPast): ?>
@@ -79,14 +73,11 @@
     <p>Không có suất diễn nào.</p>
 <?php endif; ?>
 
-
-<!-- Review submission form -->
 <div class="mt-5">
     <h3 class="h5 mb-3">Đánh giá của bạn</h3>
     <?php $currentUser = $_SESSION['user'] ?? null; ?>
     <?php if ($currentUser && isset($currentUser['user_type']) && $currentUser['user_type'] === 'customer'): ?>
         <form method="post">
-            <!-- Star rating input -->
             <div class="mb-3">
                 <label class="form-label d-block">Đánh giá:</label>
                 <style>
@@ -115,7 +106,6 @@
                     <?php endfor; ?>
                 </div>
             </div>
-            <!-- Review content -->
             <div class="mb-3">
                 <label for="reviewContent" class="form-label">Nội dung</label>
                 <textarea id="reviewContent" name="content" class="form-control" rows="3" placeholder="Viết cảm nhận của bạn..."></textarea>
@@ -127,8 +117,6 @@
     <?php endif; ?>
 </div>
 
-
-<!-- Existing reviews -->
 <div class="mt-5">
     <h3 class="h5 mb-3">Đánh giá</h3>
     <?php if (!empty($reviews)): ?>
@@ -148,15 +136,12 @@
                         }
                         ?>
                     </div>
-                    <!-- Display the review creation date clearly on dark backgrounds. -->
                     <small class="ms-auto" style="color:#adb5bd; font-size:0.85rem;">
                         <?= date('d/m/Y', strtotime($rev['created_at'])) ?>
                     </small>
                 </div>
                 <p class="mb-0">
                     <?php
-                    // Wrap review content at 15 words per line.  This preserves the full
-                    // content while ensuring lines do not stretch unbroken across the page.
                     $text = $rev['content'];
                     $words = preg_split('/\s+/', $text, -1, PREG_SPLIT_NO_EMPTY);
                     $chunks = array_chunk($words, 15);
@@ -173,4 +158,10 @@
         <p>Chưa có đánh giá nào cho vở diễn này.</p>
     <?php endif; ?>
 </div>
+
+
+
+
+
+
 

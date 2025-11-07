@@ -264,9 +264,7 @@ class AuthController extends BaseController
     $error = '';
     $info  = '';
 
-    // === 1. XÁC ĐỊNH GIAI ĐOẠN HIỆN TẠI ===
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        // Vào trang lần đầu → reset hết
         unset($_SESSION['reset_user_id'], $_SESSION['reset_verified'], $_SESSION['reset_user_email']);
         $stage = 'request';
     } else {
@@ -278,10 +276,7 @@ class AuthController extends BaseController
         }
     }
 
-    // === 2. XỬ LÝ FORM ===
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
-        // BƯỚC 1: NHẬP EMAIL
         if ($stage === 'request') {
             $emailInput = trim($_POST['email'] ?? '');
             if (!$emailInput) {
@@ -308,7 +303,6 @@ class AuthController extends BaseController
             }
         }
 
-        // BƯỚC 3: ĐẶT MẬT KHẨU MỚI
         elseif ($stage === 'reset') {
             $pwd  = trim($_POST['password'] ?? '');
             $pwd2 = trim($_POST['confirm_password'] ?? '');
@@ -322,7 +316,6 @@ class AuthController extends BaseController
             } else {
                 $uid = (int)$_SESSION['reset_user_id'];
                 if ($userModel->updatePassword($uid, $pwd)) {
-                    // === THÀNH CÔNG: XÓA HẾT SESSION + QUAY VỀ BƯỚC 1 ===
                     unset(
                         $_SESSION['reset_user_id'],
                         $_SESSION['reset_verified'],
@@ -339,8 +332,6 @@ class AuthController extends BaseController
             }
         }
     }
-
-    // === 3. HIỂN THỊ VIEW ===
     $this->render('getpassword', [
         'stage' => $stage,
         'error' => $error,

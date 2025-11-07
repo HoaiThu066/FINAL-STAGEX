@@ -35,9 +35,6 @@
 </div>
 
 <script>
-// Toggle visibility of password fields.  When the eye icon is clicked,
-// it switches the input type between password and text and toggles
-// the icon between eye and eye-slash.
 function togglePw(inputId, iconEl) {
     var input = document.getElementById(inputId);
     if (!input) return;

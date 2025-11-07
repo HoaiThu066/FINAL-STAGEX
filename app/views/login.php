@@ -1,7 +1,6 @@
 <div class="row justify-content-center">
     <div class="col-md-6 col-lg-5">
         <?php if (!empty($error)): ?>
-            <!-- Display login error above the heading -->
             <div class="alert alert-danger mb-2">
                 <?= htmlspecialchars($error) ?>
             </div>
@@ -33,7 +32,6 @@
                     </span>
                 </div>
             </div>
-            <!-- Error moved above heading; this section intentionally left blank to keep spacing consistent -->
             <button type="submit" class="btn btn-warning w-100">Đăng nhập</button>
             <p class="mt-2 mb-0 text-end"><a href="<?= BASE_URL ?>index.php?pg=getpassword" class="text-warning">Quên mật khẩu?</a></p>
         </form>
