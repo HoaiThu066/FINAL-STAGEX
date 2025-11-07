@@ -80,8 +80,8 @@ class PerformanceModel extends Database
 
     /**
      *
-     * @param int    $id     Performance ID
-     * @param string $status New status (scheduled, cancelled, completed)
+     * @param int    $id     
+     * @param string $status 
      * @return bool
      */
     public function updateStatus(int $id, string $status): bool
@@ -108,9 +108,9 @@ class PerformanceModel extends Database
      *
      * @param int    $showId
      * @param int    $theaterId
-     * @param string $date       Date in Y-m-d format
-     * @param string $startTime  Start time (HH:MM)
-     * @param string $endTime    End time (HH:MM)
+     * @param string $date       
+     * @param string $startTime  
+     * @param string $endTime    
      * @param float  $price
      * @return bool
      */
