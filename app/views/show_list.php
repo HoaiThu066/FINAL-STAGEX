@@ -1,8 +1,3 @@
-<?php
-
-?>
-
-
 <div class="row g-4">
 
     <div class="col-12 col-md-3">

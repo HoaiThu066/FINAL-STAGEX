@@ -158,10 +158,3 @@
         <p>Chưa có đánh giá nào cho vở diễn này.</p>
     <?php endif; ?>
 </div>
-
-
-
-
-
-
-

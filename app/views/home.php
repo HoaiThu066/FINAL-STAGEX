@@ -1,14 +1,7 @@
 <?php
-// Home page view.
-// Variables provided by the controller:
-//  - $upcomingShows: array of upcoming shows (with nearest_date)
-//  - $sellingShows: array of shows currently open for sale
+
 ?>
 
-
-<!-- Hero carousel showcasing featured shows.  Each slide displays
-     the poster of a show and links to its detail page.  If there
-     are no featured shows, this section is omitted. -->
 <?php if (!empty($heroShows)): ?>
     <div id="homeCarousel" class="carousel slide mb-5" data-bs-ride="carousel">
         <div class="carousel-indicators">
@@ -41,10 +34,6 @@
     </div>
 <?php endif; ?>
 
-
-
-
-<!-- Upcoming shows section -->
 <section class="mb-5">
     <h2 class="h4 mb-3">Sắp ra mắt</h2>
     <?php if (!empty($upcomingShows)): ?>
@@ -54,7 +43,6 @@
                     <div class="card h-100">
                         <img src="<?= htmlspecialchars($show['poster_image_url']) ?>" class="card-img-top" alt="<?= htmlspecialchars($show['title']) ?>" style="height:200px; object-fit:cover;">
                         <div class="card-body d-flex flex-column">
-                            <!-- Average rating above title -->
                             <div class="mb-1">
                                 <?php if (isset($show['avg_rating']) && $show['avg_rating'] !== null): ?>
                                     <?php
@@ -97,14 +85,10 @@
     <?php endif; ?>
 </section>
 
-
-<!-- Selling shows section -->
 <section class="mb-5">
     <h2 class="h4 mb-3">Đang mở bán</h2>
     <?php if (!empty($sellingShows)): ?>
         <?php
-        // Split the selling shows into chunks of four for the carousel.  Each slide
-        // displays up to four cards side by side.
         $chunks = array_chunk($sellingShows, 4);
         ?>
         <div id="sellingCarousel" class="carousel slide" data-bs-ride="carousel">
@@ -117,7 +101,7 @@
                                     <div class="card h-100">
                                         <img src="<?= htmlspecialchars($show['poster_image_url']) ?>" class="card-img-top" alt="<?= htmlspecialchars($show['title']) ?>" style="height:180px; object-fit:cover;">
                                         <div class="card-body d-flex flex-column">
-                                            <!-- Average rating above title -->
+                                         
                                             <div class="mb-1">
                                                 <?php if (isset($show['avg_rating']) && $show['avg_rating'] !== null): ?>
                                                     <?php
@@ -172,13 +156,11 @@
     <?php endif; ?>
 </section>
 
-
-<!-- Latest reviews section -->
 <section class="mb-5">
     <h2 class="h4 mb-3">Đánh giá gần nhất</h2>
     <?php if (!empty($latestReviews)): ?>
         <?php
-        // Limit the reviews to at most 15 items and split into chunks of up to 5
+
         $limitedReviews = array_slice($latestReviews, 0, 15);
         $reviewChunks = array_chunk($limitedReviews, 5);
         ?>
@@ -189,7 +171,7 @@
                         <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-5 g-4">
                             <?php foreach ($chunk as $rv): ?>
                                 <div class="col">
-                                    <!-- Review card: dark background with light text for a cinematic feel -->
+                                    
                                     <div class="card h-100 bg-dark text-light border border-secondary">
                                         <div class="card-body d-flex flex-column">
                                             <h6 class="card-title text-truncate" title="<?= htmlspecialchars($rv['title']) ?>">
@@ -197,7 +179,6 @@
                                             </h6>
                                             <div class="mb-2">
                                                 <?php
-                                                // Display star rating
                                                 $rating = (int)($rv['rating'] ?? 0);
                                                 for ($star = 1; $star <= 5; $star++) {
                                                     if ($star <= $rating) {
@@ -211,9 +192,7 @@
                                             <small class="text-muted mb-2">Bởi <?= htmlspecialchars($rv['account_name'] ?? '') ?> - <?= date('d/m/Y', strtotime($rv['created_at'])) ?></small>
                                             <p class="card-text flex-fill" style="white-space: pre-wrap;">
                                                 <?php
-                                                // Wrap the review content at 15 words per line for readability.  If the
-                                                // content exceeds 100 words, truncate after 100 words to avoid
-                                                // excessively long cards.
+                                               
                                                 $words = preg_split('/\s+/', $rv['content'], -1, PREG_SPLIT_NO_EMPTY);
                                                 $maxWords = 100;
                                                 if (count($words) > $maxWords) {
@@ -252,8 +231,6 @@
     <?php endif; ?>
 </section>
 
-
-<!-- About us section -->
 <section class="mb-5">
     <h2 class="h4 mb-4">Về chúng tôi</h2>
     <div class="row align-items-center g-4">
@@ -262,8 +239,7 @@
             <a href="<?= BASE_URL ?>index.php?pg=about" class="btn btn-warning mt-3">Tìm hiểu thêm</a>
         </div>
         <div class="col-md-6 text-center">
-            <!-- Display the provided banner image for the about section -->
-            <img src="<?= BASE_URL ?>assets/images/banner-1.png" alt="StageX" class="img-fluid rounded-3" style="max-height:250px; object-fit:cover;">
+                 <img src="<?= BASE_URL ?>assets/images/banner-1.png" alt="StageX" class="img-fluid rounded-3" style="max-height:250px; object-fit:cover;">
         </div>
     </div>
 </section>

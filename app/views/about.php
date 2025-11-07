@@ -1,6 +1,5 @@
 <h2 class="h4 mb-3">Về chúng tôi</h2>
 
-<!-- Banner image for the About page -->
 <div class="mb-4">
     <img src="<?= BASE_URL ?>assets/images/banner.png" alt="Banner" class="img-fluid w-100 rounded">
 </div>
