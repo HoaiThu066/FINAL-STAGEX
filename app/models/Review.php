@@ -1,6 +1,9 @@
 <?php
 namespace App\Models;
 
+
+
+
 use PDO;
 
 class Review extends Database
@@ -8,9 +11,6 @@ class Review extends Database
     public function getByShow(int $showId): array
     {
         $pdo = $this->getConnection();
-        // Use the stored procedure only.  In the lighter version no fallback
-        // direct query is executed; if the procedure fails or returns no
-        // rows an empty array is returned.
         try {
             $stmt = $pdo->prepare('CALL proc_get_reviews_by_show(:sid)');
             $stmt->execute(['sid' => $showId]);
@@ -21,9 +21,9 @@ class Review extends Database
             return [];
         }
     }
+
     public function create(int $showId, int $userId, int $rating, string $content): bool
     {
-        // Insert a new review using a stored procedure.  Returns true on success.
         $pdo = $this->getConnection();
         try {
             $stmt = $pdo->prepare('CALL proc_create_review(:sid, :uid, :rating, :content)');
@@ -33,8 +33,6 @@ class Review extends Database
                 'rating'  => $rating,
                 'content' => $content
             ]);
-            // Fetch the returned review_id to clear the cursor.  Some drivers
-            // will otherwise prevent subsequent queries with "commands out of sync".
             $stmt->fetch();
             $stmt->closeCursor();
             return true;
@@ -45,7 +43,6 @@ class Review extends Database
     public function getAll(): array
     {
         $pdo = $this->getConnection();
-        // Use stored procedure only; return an empty array on failure.
         try {
             $stmt = $pdo->query('CALL proc_get_all_reviews()');
             $rows = $stmt->fetchAll();
@@ -59,9 +56,6 @@ class Review extends Database
     public function getLatest(int $limit = 15): array
     {
         $pdo = $this->getConnection();
-        // Call the stored procedure to get the latest reviews.  If it fails or
-        // returns no rows, an empty array is returned.  Normalize the returned
-        // column names where necessary.
         try {
             $stmt = $pdo->prepare('CALL proc_get_latest_reviews(:lim)');
             $stmt->execute(['lim' => $limit]);
@@ -83,7 +77,6 @@ class Review extends Database
 
     public function delete(int $id): bool
     {
-        // Delete a review using a stored procedure.  Returns true on success.
         try {
             $stmt = $this->getConnection()->prepare('CALL proc_delete_review(:id)');
             $stmt->execute(['id' => $id]);
@@ -97,7 +90,6 @@ class Review extends Database
     public function getAverageRatingByShow(int $showId): ?float
     {
         $pdo = $this->getConnection();
-        // Use the stored procedure only; if unavailable or returns null, return null
         try {
             $stmt = $pdo->prepare('CALL proc_get_average_rating_by_show(:sid)');
             $stmt->execute(['sid' => $showId]);
@@ -112,3 +104,10 @@ class Review extends Database
         }
     }
 }
+
+
+
+
+
+
+
