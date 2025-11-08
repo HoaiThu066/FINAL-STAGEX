@@ -272,57 +272,49 @@ class AuthController extends BaseController
     }
 
     public function forgot(): void
-    {
-        $userModel = new User();
-        $error = '';
-        $info  = '';
+{
+    $userModel = new User();
+    $error = '';
 
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            unset($_SESSION['reset_user_id'], $_SESSION['reset_verified'], $_SESSION['reset_user_email']);
-            $stage = 'request';
+    // Xử lý gửi yêu cầu khôi phục mật khẩu
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $emailInput = trim($_POST['email'] ?? '');
+
+        if (!$emailInput) {
+            $error = 'Vui lòng nhập email.';
+        } elseif (!filter_var($emailInput, FILTER_VALIDATE_EMAIL)) {
+            $error = 'Vui lòng nhập email hợp lệ.';
         } else {
-            $stage = 'request';
-        }
+            $user = $userModel->findByEmail($emailInput);
+            if (!$user) {
+                $error = 'Không tìm thấy tài khoản.';
+            } else {
+                // Tạo mã OTP
+                $otp = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+                $expires = date('Y-m-d H:i:s', time() + 10 * 60);
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            if ($stage === 'request') {
-                $emailInput = trim($_POST['email'] ?? '');
-                if (!$emailInput) {
-                    $error = 'Vui lòng nhập email.';
-                } elseif (!filter_var($emailInput, FILTER_VALIDATE_EMAIL)) {
-                    $error = 'Vui lòng nhập email hợp lệ.';
-                } else {
-                    $user = $userModel->findByEmail($emailInput);
-                    if (!$user) {
-                        $error = 'Không tìm thấy tài khoản.';
-                    } else {
-                        // Tạo mã OTP
-                        $otp = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-                        $expires = date('Y-m-d H:i:s', time() + 10 * 60);
+                // Lưu OTP và thời hạn vào CSDL
+                $userModel->setOtp((int)$user['user_id'], $otp, $expires);
 
-                        // Lưu OTP và thời hạn vào CSDL
-                        $userModel->setOtp((int)$user['user_id'], $otp, $expires);
+                // Gửi OTP qua email
+                $this->sendOtpEmail($user['email'], $otp);
 
-                        // Gửi OTP qua email
-                        $this->sendOtpEmail($user['email'], $otp);
+                // Lưu thông tin xác thực tạm
+                $_SESSION['pending_user_id'] = $user['user_id'];
+                $_SESSION['pending_role'] = 'forgot';
+                $_SESSION['info'] = 'Mã xác thực đã được gửi. Vui lòng kiểm tra email.';
 
-                        // Lưu thông tin xác thực tạm
-                        $_SESSION['pending_user_id'] = $user['user_id'];
-                        $_SESSION['pending_role'] = 'forgot';
-                        $_SESSION['info'] = 'Mã xác thực đã được gửi. Vui lòng kiểm tra email.';
-
-                        // Chuyển tới trang xác minh OTP
-                        $this->redirect('index.php?pg=verify');
-                        return;
-                    }
-                }
+                // Chuyển tới trang xác minh OTP
+                $this->redirect('index.php?pg=verify');
+                return;
             }
         }
-
-        $this->render('getpassword', [
-            'stage' => $stage,
-            'error' => $error,
-            'info'  => $info
-        ]);
     }
+
+    // Hiển thị giao diện yêu cầu email
+    $this->render('getpassword', [
+        'error' => $error,
+        'info'  => $_SESSION['info'] ?? ''
+    ]);
+}
 }
